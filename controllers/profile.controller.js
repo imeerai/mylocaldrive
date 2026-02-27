@@ -2,6 +2,8 @@
 const User = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 
+const normalizeComparable = (value) => String(value || '').trim().toLowerCase();
+
 // Get user profile
 const getProfile = async (req, res, next) => {
   try {
@@ -104,6 +106,15 @@ const changePassword = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     if (!user) {
       res.flash('error', 'User not found');
+      return res.redirect('/profile/change-password');
+    }
+
+    const normalizedNewPassword = normalizeComparable(newPassword);
+    const normalizedEmail = normalizeComparable(user.email);
+    const normalizedUsername = normalizeComparable(user.username);
+
+    if (normalizedNewPassword === normalizedEmail || normalizedNewPassword === normalizedUsername) {
+      res.flash('error', 'Password cannot be the same as email or username');
       return res.redirect('/profile/change-password');
     }
 
