@@ -6,6 +6,13 @@ const jwt = require('jsonwebtoken');
 const { signAccessToken, signRefreshToken } = require('../middleware/auth');
 const { sendOTPEmail } = require('../config/email');
 
+const normalizeComparable = (value) => String(value || '').trim().toLowerCase();
+const isSameAsIdentityValue = (password, ...identityValues) => {
+  const normalizedPassword = normalizeComparable(password);
+  if (!normalizedPassword) return false;
+  return identityValues.some((identityValue) => normalizedPassword === normalizeComparable(identityValue));
+};
+
 const normalizeOtpType = (type) => {
   if (typeof type === 'undefined' || type === null) {
     return null;
@@ -52,6 +59,26 @@ const AUTH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax'
+};
+
+const OTP_RESET_VERIFIED_COOKIE = 'otpResetVerifiedEmail';
+const OTP_RESET_VERIFIED_MAX_AGE = 10 * 60 * 1000;
+
+const setPasswordResetVerifiedCookie = (res, email) => {
+  res.cookie(OTP_RESET_VERIFIED_COOKIE, normalizeComparable(email), {
+    ...AUTH_COOKIE_OPTIONS,
+    maxAge: OTP_RESET_VERIFIED_MAX_AGE
+  });
+};
+
+const clearPasswordResetVerifiedCookie = (res) => {
+  res.clearCookie(OTP_RESET_VERIFIED_COOKIE, AUTH_COOKIE_OPTIONS);
+};
+
+const isPasswordResetVerified = (req, email) => {
+  const verifiedEmail = normalizeComparable(req.cookies?.[OTP_RESET_VERIFIED_COOKIE]);
+  const targetEmail = normalizeComparable(email);
+  return Boolean(verifiedEmail && targetEmail && verifiedEmail === targetEmail);
 };
 
 const setAuthCookies = (res, userId) => {
@@ -105,6 +132,10 @@ const postRegister = async (req, res, next) => {
   const { username, email, password, firstName, lastName } = req.body;
   
   try {
+    if (isSameAsIdentityValue(password, username, email)) {
+      return res.redirect('/user/register?error=Password cannot be the same as email or username');
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
@@ -264,6 +295,8 @@ const postForgotPassword = async (req, res) => {
       return res.redirect('/user/forgot-password?error=Email not found');
     }
 
+    clearPasswordResetVerifiedCookie(res);
+
     // Create OTP and send email
     const { otp, verificationToken } = await OTP.createOTP(email, 'password-reset');
     await sendOTPEmail(email, otp, 'password-reset', verificationToken);
@@ -284,10 +317,21 @@ const getVerifyOTP = async (req, res) => {
   }
 
   try {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+
     const normalizedType = await resolveOtpType(email, type);
     if (!normalizedType) {
       return res.redirect('/user/login');
     }
+
+    if (normalizedType === 'registration' && req.cookies.token) {
+      return res.redirect('/dashboard');
+    }
+
+    if (normalizedType === 'password-reset' && isPasswordResetVerified(req, email)) {
+      return res.redirect(`/user/reset-password?email=${encodeURIComponent(email)}`);
+    }
+
     const initialCountdown = await OTP.getRemainingSeconds(email, normalizedType);
     const otpExpiresAtMs = await OTP.getExpiryTimestamp(email, normalizedType);
 
@@ -308,7 +352,9 @@ const getVerifyOTP = async (req, res) => {
 
 // Handle OTP verification
 const postVerifyOTP = async (req, res) => {
-  const { email, otp, type } = req.body;
+  const email = req.body?.email || req.query?.email;
+  const otp = req.body?.otp || req.query?.otp;
+  const type = req.body?.type || req.query?.type;
   let normalizedType;
 
   try {
@@ -316,6 +362,10 @@ const postVerifyOTP = async (req, res) => {
 
     if (!normalizedType) {
       return res.redirect('/user/login?error=Invalid OTP request');
+    }
+
+    if (!email || !otp) {
+      return res.redirect(`/user/verify-otp?email=${encodeURIComponent(email || '')}&type=${normalizedType}&error=${encodeURIComponent('Please enter the OTP code')}`);
     }
 
     const result = await OTP.verifyOTP(email, otp, normalizedType);
@@ -355,6 +405,7 @@ const postVerifyOTP = async (req, res) => {
 
     // If password reset OTP, redirect to reset password page
     if (normalizedType === 'password-reset') {
+      setPasswordResetVerifiedCookie(res, email);
       return res.redirect(`/user/reset-password?email=${encodeURIComponent(email)}`);
     }
 
@@ -424,6 +475,7 @@ const verifyOtpLink = async (req, res) => {
     }
 
     if (normalizedType === 'password-reset') {
+      setPasswordResetVerifiedCookie(res, email);
       return res.redirect(`/user/reset-password?email=${encodeURIComponent(email)}`);
     }
 
@@ -477,6 +529,12 @@ const getResetPassword = (req, res) => {
     return res.redirect('/user/login');
   }
 
+  if (!isPasswordResetVerified(req, email)) {
+    return res.redirect('/user/forgot-password?error=Please verify OTP first');
+  }
+
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+
   res.render('pages/reset-password', {
     title: 'Reset Password',
     currentPage: 'reset-password',
@@ -490,6 +548,10 @@ const postResetPassword = async (req, res) => {
   const { email, password, confirmPassword } = req.body;
 
   try {
+    if (!isPasswordResetVerified(req, email)) {
+      return res.redirect('/user/forgot-password?error=Please verify OTP first');
+    }
+
     if (password !== confirmPassword) {
       return res.redirect(`/user/reset-password?email=${encodeURIComponent(email)}&error=Passwords do not match`);
     }
@@ -499,9 +561,15 @@ const postResetPassword = async (req, res) => {
       return res.redirect('/user/login?error=User not found');
     }
 
+    if (isSameAsIdentityValue(password, user.email, user.username)) {
+      return res.redirect(`/user/reset-password?email=${encodeURIComponent(email)}&error=Password cannot be the same as email or username`);
+    }
+
     const hashedPassword = bcrypt.hashSync(password, 10);
     user.password = hashedPassword;
     await user.save();
+
+    clearPasswordResetVerifiedCookie(res);
 
     res.cookie('success', 'Password reset successful! Please login with your new password.', { maxAge: 5000 });
     return res.redirect('/user/login');
