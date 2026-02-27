@@ -369,7 +369,7 @@ const postForgotPassword = async (req, res) => {
     return res.redirect('/user/login?error=Password reset link sent to your email. Open your email and continue using that link.');
   } catch (err) {
     console.error('Error in forgot password:', err);
-    return res.redirect('/user/forgot-password?error=Failed to send OTP. Please try again.');
+    return res.redirect('/user/forgot-password?error=Failed to send reset link. Please try again.');
   }
 };
 
@@ -388,113 +388,14 @@ const completeOAuth = async (req, res) => {
   }
 };
 
-// Get OTP verification page
+// OTP page disabled (link-only verification flow)
 const getVerifyOTP = async (req, res) => {
-  const { email, type } = req.query;
-
-  if (!email) {
-    return res.redirect('/user/login');
-  }
-
-  try {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-
-    const normalizedType = await resolveOtpType(email, type);
-    if (!normalizedType) {
-      return res.redirect('/user/login');
-    }
-
-    if (normalizedType === 'registration' && req.cookies.token) {
-      return res.redirect('/dashboard');
-    }
-
-    if (normalizedType === 'password-reset' && isPasswordResetVerified(req, email)) {
-      return res.redirect(`/user/reset-password?email=${encodeURIComponent(email)}`);
-    }
-
-    const initialCountdown = await OTP.getRemainingSeconds(email, normalizedType);
-    const otpExpiresAtMs = await OTP.getExpiryTimestamp(email, normalizedType);
-
-    res.render('pages/verify-otp', {
-      title: 'Verify OTP',
-      currentPage: 'verify-otp',
-      email,
-      type: normalizedType,
-      initialCountdown,
-      otpExpiresAtMs,
-      error: req.query.error || null
-    });
-  } catch (err) {
-    console.error('Error loading verify OTP page:', err);
-    return res.redirect('/user/login?error=Unable to load OTP verification');
-  }
+  return res.redirect('/user/login?error=Please use the verification link sent to your email.');
 };
 
-// Handle OTP verification
+// OTP code verification disabled (link-only verification flow)
 const postVerifyOTP = async (req, res) => {
-  const email = req.body?.email || req.query?.email;
-  const otp = req.body?.otp || req.query?.otp;
-  const type = req.body?.type || req.query?.type;
-  let normalizedType;
-
-  try {
-    normalizedType = await resolveOtpType(email, type);
-
-    if (!normalizedType) {
-      return res.redirect('/user/login?error=Invalid OTP request');
-    }
-
-    if (!email || !otp) {
-      return res.redirect(`/user/verify-otp?email=${encodeURIComponent(email || '')}&type=${normalizedType}&error=${encodeURIComponent('Please enter the OTP code')}`);
-    }
-
-    const result = await OTP.verifyOTP(email, otp, normalizedType);
-
-    if (!result.success) {
-      return res.redirect(`/user/verify-otp?email=${encodeURIComponent(email)}&type=${normalizedType}&error=${encodeURIComponent(result.message)}`);
-    }
-
-    // If registration OTP, create user and log in
-    if (normalizedType === 'registration') {
-      const alreadyLoggedIn = await loginExistingUserIfAny(res, email);
-      if (alreadyLoggedIn) {
-        delete req.session.pendingUser;
-        return res.redirect('/dashboard');
-      }
-
-      const pendingUser = result.pendingUser || req.session?.pendingUser;
-      if (!pendingUser || !pendingUser.username || !pendingUser.email) {
-        return res.redirect('/user/register?error=Registration data expired. Please register again.');
-      }
-
-      const newUser = new User({
-        username: pendingUser.username,
-        email: String(pendingUser.email).toLowerCase(),
-        password: ensureHashedPassword(pendingUser.password),
-        firstName: pendingUser.firstName,
-        lastName: pendingUser.lastName
-      });
-
-      await newUser.save();
-      delete req.session.pendingUser;
-
-      setAuthCookies(res, newUser._id);
-      res.cookie('success', 'Registration successful! Welcome to MyDrive.', { maxAge: 5000 });
-      return res.redirect('/dashboard');
-    }
-
-    // If password reset OTP, redirect to reset password page
-    if (normalizedType === 'password-reset') {
-      setPasswordResetVerifiedCookie(res, email);
-      return res.redirect(`/user/reset-password?email=${encodeURIComponent(email)}`);
-    }
-
-    return res.redirect('/user/login');
-  } catch (err) {
-    console.error('Error verifying OTP:', err);
-    const fallbackType = normalizedType || await resolveOtpType(email, type) || 'registration';
-    return res.redirect(`/user/verify-otp?email=${encodeURIComponent(email)}&type=${fallbackType}&error=Verification failed`);
-  }
+  return res.redirect('/user/login?error=Please use the verification link sent to your email.');
 };
 
 // Handle verification via direct link (email button)
@@ -523,7 +424,10 @@ const verifyOtpLink = async (req, res) => {
           return res.redirect('/dashboard');
         }
       }
-      return res.redirect(`/user/verify-otp?email=${encodeURIComponent(email)}&type=${normalizedType}&error=${encodeURIComponent(result.message)}`);
+      if (normalizedType === 'password-reset') {
+        return res.redirect(`/user/forgot-password?error=${encodeURIComponent(result.message)}`);
+      }
+      return res.redirect(`/user/register?error=${encodeURIComponent(result.message)}`);
     }
 
     if (normalizedType === 'registration') {
@@ -576,33 +480,16 @@ const verifyOtpLink = async (req, res) => {
     }
 
     const fallbackType = normalizedType || await resolveOtpType(email, type) || 'registration';
-    return res.redirect(`/user/verify-otp?email=${encodeURIComponent(email)}&type=${fallbackType}&error=Verification failed`);
+    if (fallbackType === 'password-reset') {
+      return res.redirect('/user/forgot-password?error=Verification failed');
+    }
+    return res.redirect('/user/register?error=Verification failed');
   }
 };
 
-// Resend OTP
+// Resend OTP endpoint disabled (link-only verification flow)
 const resendOTP = async (req, res) => {
-  const { email, type } = req.body;
-
-  try {
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Email is required' });
-    }
-
-    const normalizedType = await resolveOtpType(email, type) || 'registration';
-    const { otp, verificationToken } = await OTP.createOTP(email, normalizedType);
-    await sendOTPEmail(
-      email,
-      otp,
-      normalizedType === 'registration' ? 'verification' : 'password-reset',
-      verificationToken
-    );
-
-    return res.json({ success: true });
-  } catch (err) {
-    console.error('Error resending OTP:', err);
-    return res.status(500).json({ success: false, message: 'Failed to resend OTP. Please try again.' });
-  }
+  return res.status(410).json({ success: false, message: 'OTP code flow is disabled. Please use email verification links.' });
 };
 
 // Get reset password page
@@ -614,7 +501,7 @@ const getResetPassword = (req, res) => {
   }
 
   if (!isPasswordResetVerified(req, email)) {
-    return res.redirect('/user/forgot-password?error=Please verify OTP first');
+    return res.redirect('/user/forgot-password?error=Please verify reset link first');
   }
 
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
@@ -633,7 +520,7 @@ const postResetPassword = async (req, res) => {
 
   try {
     if (!isPasswordResetVerified(req, email)) {
-      return res.redirect('/user/forgot-password?error=Please verify OTP first');
+      return res.redirect('/user/forgot-password?error=Please verify reset link first');
     }
 
     if (password !== confirmPassword) {
@@ -673,9 +560,6 @@ module.exports = {
   checkEmail,
   getForgotPassword,
   postForgotPassword,
-  getVerifyOTP,
-  postVerifyOTP,
-  resendOTP,
   verifyOtpLink,
   completeOAuth,
   getResetPassword,

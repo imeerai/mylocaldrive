@@ -37,7 +37,7 @@
                 <div class="nav-actions">
                     <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
                         <a href="/user/logout" class="btn btn-outline" id="logoutLink">Logout</a>
-                    <% } else if (typeof currentPage === 'undefined' || (currentPage !== 'login' && currentPage !== 'register' && currentPage !== 'verify-otp')) { %>
+                    <% } else if (typeof currentPage === 'undefined' || (currentPage !== 'login' && currentPage !== 'register')) { %>
                         <a href="/user/login" class="btn btn-outline">Login</a>
                         <a href="/user/register" class="btn btn-primary">Sign Up</a>
                     <% } %>

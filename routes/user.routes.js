@@ -3,7 +3,7 @@ const router = express.Router({ mergeParams: true });
 const authController = require('../controllers/auth.controller');
 const passport = require('../config/passport');
 const { requireAuth } = require('../middleware/auth');
-const { authLimiter, otpVerifyLimiter, otpResendLimiter } = require('../middleware/rateLimiter');
+const { authLimiter, otpVerifyLimiter } = require('../middleware/rateLimiter');
 const {
   registerValidationRules,
   loginValidationRules,
@@ -34,11 +34,8 @@ router.get("/check-email", authController.checkEmail);
 router.get("/forgot-password", authController.getForgotPassword);
 router.post("/forgot-password", authLimiter, authController.postForgotPassword);
 
-// OTP verification routes
-router.get("/verify-otp", authController.getVerifyOTP);
-router.get("/verify-otp-link", otpVerifyLimiter, authController.verifyOtpLink);
-router.post("/verify-otp", otpVerifyLimiter, authController.postVerifyOTP);
-router.post("/resend-otp", otpResendLimiter, authController.resendOTP);
+// Email link verification route
+router.get("/verify-link", otpVerifyLimiter, authController.verifyOtpLink);
 
 // Reset password routes
 router.get("/reset-password", authController.getResetPassword);

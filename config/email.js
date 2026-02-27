@@ -43,7 +43,7 @@ const sendOTPEmail = async (email, otp, type = 'verification', verificationToken
       ? 'Welcome to MyDrive! Please verify your email address using the button below to complete your registration.'
       : 'We received a request to reset your password. Tap the button below to continue.';
 
-  const actionUrl = `${APP_URL}/user/verify-otp-link?email=${encodeURIComponent(email)}&type=${encodeURIComponent(type === 'verification' ? 'registration' : type)}&token=${encodeURIComponent(verificationToken)}`;
+  const actionUrl = `${APP_URL}/user/verify-link?email=${encodeURIComponent(email)}&type=${encodeURIComponent(type === 'verification' ? 'registration' : type)}&token=${encodeURIComponent(verificationToken)}`;
 
   const htmlContent = `
 <!DOCTYPE html>

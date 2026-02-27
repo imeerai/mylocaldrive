@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalBtnText = submitBtn ? submitBtn.textContent : '';
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Sending OTP...';
+            submitBtn.textContent = 'Sending reset link...';
         }
 
         try {
