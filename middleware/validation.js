@@ -1,5 +1,7 @@
 const { body, validationResult } = require("express-validator");
 
+const normalizeComparable = (value) => String(value || '').trim().toLowerCase();
+
 // Define validation rules using express-validator chain
 // This validates user input during registration process
 const registerValidationRules = () => {
@@ -22,6 +24,17 @@ const registerValidationRules = () => {
       .matches(/[A-Z]/).withMessage("Password must contain at least one uppercase letter")
       .matches(/[a-z]/).withMessage("Password must contain at least one lowercase letter")
       .matches(/[0-9]/).withMessage("Password must contain at least one number")
+      .custom((password, { req }) => {
+        const normalizedPassword = normalizeComparable(password);
+        const normalizedEmail = normalizeComparable(req.body?.email);
+        const normalizedUsername = normalizeComparable(req.body?.username);
+
+        if (normalizedPassword && (normalizedPassword === normalizedEmail || normalizedPassword === normalizedUsername)) {
+          throw new Error("Password cannot be the same as email or username");
+        }
+
+        return true;
+      })
   ];
 };
 
