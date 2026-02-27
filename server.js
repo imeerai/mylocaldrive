@@ -38,32 +38,17 @@ if (process.env.VERCEL) {
       }
       // If it's already a plain object Vercel auto-parsed, keep it
 
-      req.body = parsed;
-      req._body = true;
+      // Mark as parsed only if we actually have meaningful payload.
+      // If body is empty, leave req._body untouched so Express parsers can still run.
+      const hasPayload =
+        (typeof parsed === 'string' && parsed.length > 0) ||
+        Buffer.isBuffer(parsed) ||
+        (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0);
 
-    // Case 2: req.body is undefined – Vercel didn't pre-parse; read the stream
-    } else if (req.body === undefined && !req._body) {
-      await new Promise((resolve) => {
-        const chunks = [];
-        req.on('data', (chunk) => chunks.push(chunk));
-        req.on('end', () => {
-          const raw = Buffer.concat(chunks).toString('utf8');
-          if (raw.length > 0) {
-            if (ct.includes('application/json')) {
-              try { req.body = JSON.parse(raw); } catch (_) { req.body = {}; }
-            } else if (ct.includes('urlencoded')) {
-              req.body = Object.fromEntries(new URLSearchParams(raw));
-            } else {
-              req.body = {};
-            }
-          } else {
-            req.body = {};
-          }
-          req._body = true;
-          resolve();
-        });
-        req.on('error', () => { req.body = {}; req._body = true; resolve(); });
-      });
+      if (hasPayload) {
+        req.body = parsed;
+        req._body = true;
+      }
     }
 
     return app(req, res);
