@@ -40,8 +40,8 @@ const sendOTPEmail = async (email, otp, type = 'verification', verificationToken
   const heading = type === 'verification' ? 'Email Verification' : 'Password Reset';
   const message =
     type === 'verification'
-      ? 'Welcome to MyDrive! Please verify your email address to complete your registration.'
-      : 'We received a request to reset your password. Use the OTP below or tap the button to continue.';
+      ? 'Welcome to MyDrive! Please verify your email address using the button below to complete your registration.'
+      : 'We received a request to reset your password. Tap the button below to continue.';
 
   const actionUrl = `${APP_URL}/user/verify-otp-link?email=${encodeURIComponent(email)}&type=${encodeURIComponent(type === 'verification' ? 'registration' : type)}&token=${encodeURIComponent(verificationToken)}`;
 
@@ -80,11 +80,6 @@ const sendOTPEmail = async (email, otp, type = 'verification', verificationToken
       <h2>${heading}</h2>
       <p>${message}</p>
       
-      <div class="otp-box">
-        <div class="otp-label">Your OTP Code</div>
-        <div class="otp-code">${otp}</div>
-      </div>
-
       <div style="text-align: center; margin: 30px 0;">
         <a href="${actionUrl}" class="verify-btn" style="display: inline-block; background: #6366f1; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; transition: background 0.3s;">
           ${type === 'verification' ? '✓ Verify & Continue' : 'Reset Password'}
@@ -92,7 +87,7 @@ const sendOTPEmail = async (email, otp, type = 'verification', verificationToken
       </div>
 
       <div class="expiry">
-        <p>⏰ <strong>Important:</strong> This OTP will expire in 60 seconds. Please verify immediately.</p>
+        <p>⏰ <strong>Important:</strong> This verification link expires in 60 seconds. Please use it immediately.</p>
       </div>
 
       <p style="color: #6b7280; font-size: 14px;">If you didn't request this, please ignore this email or contact support if you have concerns.</p>

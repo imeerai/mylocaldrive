@@ -24,10 +24,24 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
+        required: function () {
+            return !this.googleId && !this.githubId;
+        },
         minlength: [8, 'Password must be at least 8 characters long'],
         maxlength: [128, 'Password cannot exceed 128 characters'],
         trim: true,
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true,
+        trim: true
+    },
+    githubId: {
+        type: String,
+        unique: true,
+        sparse: true,
+        trim: true
     },
     firstName: {
         type: String,

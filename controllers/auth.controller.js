@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { signAccessToken, signRefreshToken } = require('../middleware/auth');
 const { sendOTPEmail } = require('../config/email');
+const crypto = require('crypto');
 
 const normalizeComparable = (value) => String(value || '').trim().toLowerCase();
 const isSameAsIdentityValue = (password, ...identityValues) => {
@@ -113,6 +114,58 @@ const loginExistingUserIfAny = async (res, email) => {
   return true;
 };
 
+const generateOAuthPassword = () => crypto.randomBytes(24).toString('hex');
+
+const generateUniqueOAuthUsername = async (seedValue) => {
+  const base = String(seedValue || 'user')
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 20) || 'user';
+
+  let candidate = base;
+  let suffix = 1;
+  while (await User.findOne({ username: candidate })) {
+    const suffixStr = String(suffix++);
+    const maxBaseLength = Math.max(3, 20 - suffixStr.length);
+    candidate = `${base.slice(0, maxBaseLength)}${suffixStr}`;
+  }
+  return candidate;
+};
+
+const upsertOAuthUser = async (oauthProfile) => {
+  const providerField = oauthProfile.provider === 'google' ? 'googleId' : 'githubId';
+
+  let user = await User.findOne({ [providerField]: oauthProfile.providerId });
+  if (user) return user;
+
+  user = await User.findOne({ email: oauthProfile.email });
+  if (user) {
+    if (!user[providerField]) {
+      user[providerField] = oauthProfile.providerId;
+      if (!user.firstName && oauthProfile.firstName) user.firstName = oauthProfile.firstName;
+      if (!user.lastName && oauthProfile.lastName) user.lastName = oauthProfile.lastName;
+      await user.save();
+    }
+    return user;
+  }
+
+  const username = await generateUniqueOAuthUsername(oauthProfile.usernameHint || oauthProfile.email);
+  const password = bcrypt.hashSync(generateOAuthPassword(), 10);
+
+  const newUser = new User({
+    username,
+    email: oauthProfile.email,
+    password,
+    firstName: oauthProfile.firstName || '',
+    lastName: oauthProfile.lastName || '',
+    [providerField]: oauthProfile.providerId
+  });
+
+  await newUser.save();
+  return newUser;
+};
+
 // Get registration page
 const getRegister = (req, res) => {
   // If user is already logged in, redirect to dashboard
@@ -124,6 +177,8 @@ const getRegister = (req, res) => {
     title: 'User Registration',
     currentPage: 'register',
     error: req.query.error || null,
+    showGoogleAuth: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    showGithubAuth: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
   });
 };
 
@@ -164,7 +219,7 @@ const postRegister = async (req, res, next) => {
     req.session = req.session || {};
     req.session.pendingUser = pendingUser;
 
-    return res.redirect(`/user/verify-otp?email=${encodeURIComponent(email)}&type=registration`);
+    return res.redirect('/user/login?error=Verification link sent to your email. Open your email and continue using that link.');
   } catch (err) {
     if (err.code === 11000) {
       const duplicateField = Object.keys(err.keyValue || {})[0] || 'username';
@@ -186,6 +241,8 @@ const getLogin = (req, res) => {
     title: 'User Login', 
     currentPage: 'login',
     error: req.query.error || null,
+    showGoogleAuth: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    showGithubAuth: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
   });
 };
 
@@ -309,10 +366,25 @@ const postForgotPassword = async (req, res) => {
     const { otp, verificationToken } = await OTP.createOTP(email, 'password-reset');
     await sendOTPEmail(email, otp, 'password-reset', verificationToken);
 
-    return res.redirect(`/user/verify-otp?email=${encodeURIComponent(email)}&type=password-reset`);
+    return res.redirect('/user/login?error=Password reset link sent to your email. Open your email and continue using that link.');
   } catch (err) {
     console.error('Error in forgot password:', err);
     return res.redirect('/user/forgot-password?error=Failed to send OTP. Please try again.');
+  }
+};
+
+const completeOAuth = async (req, res) => {
+  try {
+    if (!req.user || !req.user.email || !req.user.provider || !req.user.providerId) {
+      return res.redirect('/user/login?error=Social login failed. Please try again.');
+    }
+
+    const user = await upsertOAuthUser(req.user);
+    setAuthCookies(res, user._id);
+    return res.redirect('/dashboard');
+  } catch (err) {
+    console.error('OAuth callback error:', err);
+    return res.redirect('/user/login?error=Social login failed. Please try again.');
   }
 };
 
@@ -605,6 +677,7 @@ module.exports = {
   postVerifyOTP,
   resendOTP,
   verifyOtpLink,
+  completeOAuth,
   getResetPassword,
   postResetPassword
 };

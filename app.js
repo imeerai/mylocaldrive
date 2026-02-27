@@ -9,6 +9,7 @@ const app = express();
 const helmet = require('helmet');
 const compression = require('compression');
 const session = require('express-session');
+const passport = require('./config/passport');
 const regRouter = require('./routes/user.routes');
 const indexRouter = require('./routes/index.routes');
 const engine = require('ejs-mate');
@@ -75,6 +76,8 @@ app.use(session({
   // Disable session store warning in production/serverless
   ...(process.env.VERCEL ? { store: new session.MemoryStore() } : {})
 }));
+
+app.use(passport.initialize());
 // Suppress MemoryStore warning on Vercel (sessions are cookie-based via JWT anyway)
 if (process.env.VERCEL) {
   process.env.DISABLE_MEMORY_STORE_WARNING = 'true';

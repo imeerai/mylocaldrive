@@ -17,6 +17,18 @@
             </div>
         <% } %>
 
+        <% if (showGoogleAuth || showGithubAuth) { %>
+            <div style="display: grid; gap: 0.6rem; margin-bottom: 1rem;">
+                <% if (showGoogleAuth) { %>
+                    <a href="/user/auth/google" class="btn btn-outline" style="text-align:center;">Continue with Google</a>
+                <% } %>
+                <% if (showGithubAuth) { %>
+                    <a href="/user/auth/github" class="btn btn-outline" style="text-align:center;">Continue with GitHub</a>
+                <% } %>
+            </div>
+            <div style="text-align:center; margin: 0 0 1rem; color: #9ca3af; font-size: 0.85rem;">or register with email and password</div>
+        <% } %>
+
         <form id="registerForm" class="auth-form" action="/user/register" method="POST">
             <div class="form-group">
                 <label for="username" class="form-label">Username</label>
