@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
-const OTP_EXPIRY_MS = 60 * 1000;
+const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
 const otpSchema = new mongoose.Schema({
   email: {

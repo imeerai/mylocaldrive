@@ -16,6 +16,11 @@ const cookieParser = require('cookie-parser');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const { sanitizeRequest } = require('./middleware/sanitize');
 
+// ========== TRUST PROXY (required for Vercel / reverse-proxy deployments) ==========
+// Without this, req.protocol is 'http' behind Vercel's HTTPS proxy, causing
+// res.redirect() to emit http:// URLs → Vercel forces HTTPS → infinite redirect loop.
+app.set('trust proxy', 1);
+
 // ========== VIEW ENGINE CONFIGURATION ==========
 app.engine('ejs', engine);
 app.set('view engine', 'ejs');
@@ -42,15 +47,19 @@ app.use(helmet({
 // Compression: Enable gzip compression
 app.use(compression());
 
-// Data Sanitization: Against NoSQL injection + XSS (Express 5 safe)
-app.use(sanitizeRequest);
-
 // ========== STATIC FILES & MIDDLEWARE ==========
 app.use(express.static(path.join(__dirname, "public"), { maxAge: '1d' }));
-app.use('/uploads', express.static(path.join(__dirname, "uploads"), { maxAge: '7d' }));
+// Only serve local uploads in non-Vercel environments (files are served from R2 on Vercel)
+if (!process.env.VERCEL) {
+  app.use('/uploads', express.static(path.join(__dirname, "uploads"), { maxAge: '7d' }));
+}
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// Data Sanitization: Against NoSQL injection + XSS (must run AFTER body parsers)
+app.use(sanitizeRequest);
 
 // Session middleware for temporary data storage
 app.use(session({
@@ -59,10 +68,17 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false,
-    maxAge: 10 * 60 * 1000 // 10 minutes
-  }
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 10 * 60 * 1000, // 10 minutes
+    sameSite: 'lax'
+  },
+  // Disable session store warning in production/serverless
+  ...(process.env.VERCEL ? { store: new session.MemoryStore() } : {})
 }));
+// Suppress MemoryStore warning on Vercel (sessions are cookie-based via JWT anyway)
+if (process.env.VERCEL) {
+  process.env.DISABLE_MEMORY_STORE_WARNING = 'true';
+}
 
 // ========== CACHING MIDDLEWARE ==========
 // Set cache headers for different content types
