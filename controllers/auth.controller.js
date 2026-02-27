@@ -132,6 +132,10 @@ const postRegister = async (req, res, next) => {
   const { username, email, password, firstName, lastName } = req.body;
   
   try {
+    if (!username || !email || !password) {
+      return res.redirect('/user/register?error=All required fields are missing');
+    }
+
     if (isSameAsIdentityValue(password, username, email)) {
       return res.redirect('/user/register?error=Password cannot be the same as email or username');
     }
@@ -289,6 +293,10 @@ const postForgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
+    if (!email) {
+      return res.redirect('/user/forgot-password?error=Email is required');
+    }
+
     // Check if user exists
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
@@ -505,6 +513,10 @@ const resendOTP = async (req, res) => {
   const { email, type } = req.body;
 
   try {
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
     const normalizedType = await resolveOtpType(email, type) || 'registration';
     const { otp, verificationToken } = await OTP.createOTP(email, normalizedType);
     await sendOTPEmail(

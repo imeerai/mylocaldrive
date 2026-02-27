@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
     username.addEventListener('input', handleUsername);
     password.addEventListener('input', handlePassword);
 
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         const isUsernameValid = handleUsername();
         const isEmailValid = handleEmail();
         const isPasswordValid = handlePassword();
@@ -56,6 +56,43 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             return false;
         }
-        // Let the form submit naturally if validation passes
+
+        e.preventDefault();
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn ? submitBtn.textContent : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending OTP...';
+        }
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/html'
+                },
+                body: JSON.stringify({
+                    username: username.value.trim(),
+                    email: email.value.trim(),
+                    password: password.value
+                })
+            });
+
+            if (response.redirected) {
+                window.location.assign(response.url);
+                return;
+            }
+
+            window.location.reload();
+        } catch (err) {
+            form.submit();
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+        }
     });
 });
