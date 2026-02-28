@@ -11,18 +11,6 @@
             </div>
         <% } %>
 
-        <% if (showGoogleAuth || showGithubAuth) { %>
-            <div style="display: grid; gap: 0.6rem; margin-bottom: 1rem;">
-                <% if (showGoogleAuth) { %>
-                    <a href="/user/auth/google" class="btn btn-outline" style="text-align:center;">Continue with Google</a>
-                <% } %>
-                <% if (showGithubAuth) { %>
-                    <a href="/user/auth/github" class="btn btn-outline" style="text-align:center;">Continue with GitHub</a>
-                <% } %>
-            </div>
-            <div style="text-align:center; margin: 0 0 1rem; color: #9ca3af; font-size: 0.85rem;">or login with username/password</div>
-        <% } %>
-
         <form id="loginForm" class="auth-form" action="/user/login" method="POST">
             <div class="form-group">
                 <label for="username" class="form-label">Username</label>
@@ -54,12 +42,11 @@
                 <span class="error-message" id="passwordError"></span>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: flex-start; align-items: center;">
                 <div class="auth-checkbox-group">
                     <input type="checkbox" id="remember" name="remember" />
                     <label for="remember">Remember me</label>
                 </div>
-                <a href="/user/forgot-password" class="auth-link" style="font-size: 0.85rem;">Forgot password?</a>
             </div>
 
             <button type="submit" class="btn-primary btn-full">
