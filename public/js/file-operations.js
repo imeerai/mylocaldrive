@@ -36,6 +36,25 @@
 		return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 	};
 
+	const formatTransferRate = (bytesPerSecond) => {
+		if (!Number.isFinite(bytesPerSecond) || bytesPerSecond <= 0) return '';
+		if (bytesPerSecond < 1024) return `${Math.round(bytesPerSecond)} B/s`;
+		if (bytesPerSecond < 1024 * 1024) return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`;
+		if (bytesPerSecond < 1024 * 1024 * 1024) return `${(bytesPerSecond / (1024 * 1024)).toFixed(2)} MB/s`;
+		return `${(bytesPerSecond / (1024 * 1024 * 1024)).toFixed(2)} GB/s`;
+	};
+
+	const formatEta = (seconds) => {
+		if (!Number.isFinite(seconds) || seconds <= 0) return '';
+		if (seconds < 60) return `${Math.ceil(seconds)}s left`;
+		const mins = Math.floor(seconds / 60);
+		const secs = Math.ceil(seconds % 60);
+		if (mins < 60) return `${mins}m ${secs}s left`;
+		const hours = Math.floor(mins / 60);
+		const remMins = mins % 60;
+		return `${hours}h ${remMins}m left`;
+	};
+
 	const updateFileList = () => {
 		if (!fileListContainer || !uploadBtn || !fileList) return;
 
@@ -134,10 +153,86 @@
 	let currentUploadController = null;
 	let progressPanelHidden = false;
 	let progressPanelCollapsed = false;
+	let refreshUploadSummary = null;
 
 	const isMobileProgressView = () => window.innerWidth <= 768;
 	const getHiddenTransform = () => 'translateY(110%)';
 	const getVisibleTransform = () => 'translateY(0)';
+
+	const finalizeUploadRow = (index, state = 'completed') => {
+		const rowEl = document.getElementById(`uploadFile_${index}`);
+		const listEl = document.getElementById('uploadFilesList');
+		const cancelBtn = document.querySelector(`.cancel-file-btn[data-file-index="${index}"]`);
+		const progressWrapEl = document.getElementById(`fileProgressWrap_${index}`);
+		if (!rowEl || !listEl) return;
+
+		if (cancelBtn) cancelBtn.style.display = 'none';
+		rowEl.style.opacity = state === 'completed' ? '0.88' : '0.76';
+		rowEl.style.paddingTop = '0.55rem';
+		rowEl.style.paddingBottom = '0.55rem';
+
+		if (progressWrapEl) {
+			progressWrapEl.style.transition = 'max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease';
+			progressWrapEl.style.maxHeight = '0';
+			progressWrapEl.style.opacity = '0';
+			progressWrapEl.style.marginTop = '0';
+			progressWrapEl.style.overflow = 'hidden';
+		}
+
+		listEl.appendChild(rowEl);
+	};
+
+	const uploadSingleFileWithProgress = (file, index, onProgress) => new Promise((resolve, reject) => {
+		const xhr = new XMLHttpRequest();
+		xhr.open('POST', '/files/upload');
+		xhr.responseType = 'json';
+
+		currentUploadController = {
+			abort: () => xhr.abort(),
+		};
+
+		xhr.upload.onprogress = (event) => {
+			if (!event.lengthComputable || typeof onProgress !== 'function') return;
+			const percent = Math.min(100, Math.round((event.loaded / event.total) * 100));
+			onProgress(percent, event.loaded, event.total);
+		};
+
+		xhr.onload = () => {
+			if (cancelledFiles.has(index)) {
+				reject(Object.assign(new Error('Upload cancelled'), { name: 'AbortError' }));
+				return;
+			}
+
+			let data = xhr.response;
+			if (!data || typeof data !== 'object') {
+				try {
+					data = JSON.parse(xhr.responseText || '{}');
+				} catch (err) {
+					data = {};
+				}
+			}
+
+			if (xhr.status >= 200 && xhr.status < 300) {
+				resolve(data);
+				return;
+			}
+
+			const errorMessage = data && data.error ? data.error : `Upload failed with status ${xhr.status}`;
+			reject(new Error(errorMessage));
+		};
+
+		xhr.onerror = () => {
+			reject(new Error('Network error while uploading file'));
+		};
+
+		xhr.onabort = () => {
+			reject(Object.assign(new Error('Upload cancelled'), { name: 'AbortError' }));
+		};
+
+		const formData = new FormData();
+		formData.append('files', file);
+		xhr.send(formData);
+	});
 	
 	window.uploadFiles = async () => {
 		if (!uploadBtn) return;
@@ -157,33 +252,33 @@
 
 		// Update summary
 		const summaryEl = document.getElementById('progressPopupSummary');
-		if (summaryEl) summaryEl.textContent = `0 of ${selectedFiles.length} files`;
+		if (summaryEl) summaryEl.textContent = 'Starting uploads...';
+		const headerTitleEl = document.getElementById('progressHeaderTitle');
+		if (headerTitleEl) headerTitleEl.textContent = `Uploading ${selectedFiles.length} item${selectedFiles.length === 1 ? '' : 's'}`;
 		
 		// Create file list in progress popup
 		const uploadFilesList = document.getElementById('uploadFilesList');
 		
 		if (uploadFilesList) {
 			uploadFilesList.innerHTML = selectedFiles.map((file, index) => `
-				<div id="uploadFile_${index}" style="padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: opacity 0.3s;">
-					<div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.55rem;">
-						<div style="display: flex; align-items: center; gap: 0.6rem; min-width: 0; flex: 1;">
-							<i class="fas fa-file" style="color: var(--primary-color); font-size: 1rem; flex-shrink: 0;"></i>
+				<div id="uploadFile_${index}" style="padding: 0.72rem 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.08); transition: opacity 0.25s; background: rgba(0,0,0,0.12);">
+					<div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+						<div style="display: flex; align-items: center; gap: 0.62rem; min-width: 0; flex: 1;">
+							<i class="fas fa-file-alt" style="color: var(--primary-color); font-size: 0.9rem; flex-shrink: 0;"></i>
 							<div style="min-width: 0; flex: 1;">
-								<div style="font-size: 0.88rem; color: var(--text-dark); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.name}">${file.name}</div>
-								<div style="font-size: 0.74rem; color: var(--text-light); margin-top: 0.15rem;">${formatSize(file.size)}</div>
+								<div style="font-size: 0.9rem; color: var(--text-dark); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.name}">${file.name}</div>
+								<div id="fileSubStatus_${index}" style="font-size: 0.74rem; color: var(--text-light); margin-top: 0.08rem;">Waiting...</div>
 							</div>
 						</div>
-						<div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
-							<span id="fileStatus_${index}" style="font-size: 0.73rem; color: var(--text-light); white-space: nowrap;">
-								<i class="fas fa-clock" style="opacity: 0.5;"></i> Waiting...
-							</span>
-							<button class="cancel-file-btn" data-file-index="${index}" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.2rem; font-size: 1rem; opacity: 0.8; transition: all 0.2s;" title="Cancel this file">
+						<div style="display: flex; align-items: center; gap: 0.45rem; flex-shrink: 0;">
+							<span id="fileStatus_${index}" style="font-size: 0.9rem; color: var(--text-light); white-space: nowrap;"><i class="fas fa-hourglass-half" style="opacity: 0.85;"></i></span>
+							<button class="cancel-file-btn" data-file-index="${index}" style="display: none; background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.2rem; font-size: 1rem; opacity: 0.8; transition: all 0.2s;" title="Cancel this file">
 								<i class="fas fa-times-circle"></i>
 							</button>
 						</div>
 					</div>
-					<div style="background: rgba(0,0,0,0.3); height: 6px; border-radius: 6px; overflow: hidden;">
-						<div id="fileProgress_${index}" style="background: linear-gradient(90deg, var(--primary-color), #06b6d4); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+					<div id="fileProgressWrap_${index}" style="background: rgba(129, 140, 248, 0.15); height: 3px; border-radius: 999px; overflow: hidden; max-height: 3px; margin-top: 0.45rem;">
+						<div id="fileProgress_${index}" style="background: linear-gradient(90deg, var(--primary-color), var(--primary-dark)); height: 100%; width: 0%; transition: width 0.25s ease;"></div>
 					</div>
 				</div>
 			`).join('');
@@ -208,13 +303,35 @@
 		const totalFiles = selectedFiles.length;
 		let uploadedCount = 0;
 		let failedCount = 0;
+		let currentSpeedBps = 0;
+		let currentEtaSeconds = 0;
+
+		const getRemainingFilesCount = () => Math.max(0, totalFiles - uploadedCount - failedCount - cancelledFiles.size);
 
 		const updateSummary = () => {
 			const summaryEl = document.getElementById('progressPopupSummary');
+			const headerTitleEl = document.getElementById('progressHeaderTitle');
 			if (!summaryEl) return;
 			const cancelledCount = cancelledFiles.size;
-			summaryEl.textContent = `${uploadedCount} uploaded • ${cancelledCount} cancelled • ${failedCount} failed • ${totalFiles} total`;
+			const remainingCount = getRemainingFilesCount();
+			let summaryText = `${uploadedCount} of ${totalFiles} uploaded`;
+			const speedText = formatTransferRate(currentSpeedBps);
+			const etaText = formatEta(currentEtaSeconds);
+			if (remainingCount > 0 && speedText && etaText) {
+				summaryText = `Uploading... ${speedText} • ${etaText}`;
+			}
+			if (remainingCount === totalFiles) summaryText = 'Starting uploads...';
+			if (remainingCount === 0) summaryText = 'Upload complete';
+			if (headerTitleEl) {
+				headerTitleEl.textContent = remainingCount > 0
+					? `Uploading ${remainingCount} item${remainingCount === 1 ? '' : 's'}`
+					: `Upload complete`;
+			}
+			summaryEl.textContent = summaryText;
 		};
+
+		refreshUploadSummary = updateSummary;
+		updateSummary();
 
 		for (let index = 0; index < selectedFiles.length; index += 1) {
 			if (cancelAllRequested) break;
@@ -225,30 +342,48 @@
 
 			const file = selectedFiles[index];
 			const statusEl = document.getElementById(`fileStatus_${index}`);
+			const subStatusEl = document.getElementById(`fileSubStatus_${index}`);
 			const progressEl = document.getElementById(`fileProgress_${index}`);
+			const totalPendingBytes = selectedFiles.reduce((sum, selectedFile, fileIndex) => {
+				if (fileIndex <= index || cancelledFiles.has(fileIndex)) return sum;
+				return sum + (selectedFile.size || 0);
+			}, 0);
+			let uploadedBytesForCurrentFile = 0;
+			let lastLoadedBytes = 0;
+			let lastProgressTs = Date.now();
+			let smoothedSpeed = 0;
 
-			if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+			if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin" style="color: var(--primary-color);"></i>';
+			if (subStatusEl) subStatusEl.textContent = `Uploading ${formatSize(file.size)}`;
 			currentUploadingIndex = index;
-			currentUploadController = new AbortController();
-
-			const progressInterval = setInterval(() => {
-				if (!progressEl || cancelledFiles.has(index)) return;
-				const currentWidth = parseInt(progressEl.style.width, 10) || 0;
-				if (currentWidth < 90) {
-					progressEl.style.width = `${currentWidth + Math.random() * 12}%`;
-				}
-			}, 180);
 
 			try {
-				const formData = new FormData();
-				formData.append('files', file);
-				const res = await fetch('/files/upload', {
-					method: 'POST',
-					body: formData,
-					signal: currentUploadController.signal,
+				const data = await uploadSingleFileWithProgress(file, index, (percent, loaded = 0) => {
+					if (cancelledFiles.has(index)) return;
+					const now = Date.now();
+					const deltaBytes = Math.max(0, loaded - lastLoadedBytes);
+					const deltaMs = Math.max(1, now - lastProgressTs);
+					const instantSpeed = deltaBytes / (deltaMs / 1000);
+					smoothedSpeed = smoothedSpeed === 0 ? instantSpeed : (smoothedSpeed * 0.75) + (instantSpeed * 0.25);
+					lastLoadedBytes = loaded;
+					lastProgressTs = now;
+					uploadedBytesForCurrentFile = loaded;
+					const currentFileRemainingBytes = Math.max(0, (file.size || 0) - uploadedBytesForCurrentFile);
+					const totalRemainingBytes = currentFileRemainingBytes + totalPendingBytes;
+					currentSpeedBps = smoothedSpeed;
+					currentEtaSeconds = smoothedSpeed > 0 ? (totalRemainingBytes / smoothedSpeed) : 0;
+					if (progressEl) progressEl.style.width = `${percent}%`;
+					if (statusEl) {
+						const speedLabel = formatTransferRate(smoothedSpeed);
+						statusEl.innerHTML = '<i class="fas fa-spinner fa-spin" style="color: var(--primary-color);"></i>';
+						if (subStatusEl) {
+							subStatusEl.textContent = speedLabel
+								? `${percent}% • ${speedLabel}`
+								: `${percent}%`;
+						}
+					}
+					updateSummary();
 				});
-				const data = await res.json();
-				clearInterval(progressInterval);
 
 				if (cancelledFiles.has(index)) {
 					if (statusEl) statusEl.innerHTML = '<i class="fas fa-ban" style="color: #ef4444;"></i> Cancelled';
@@ -259,31 +394,47 @@
 
 				if (data.success) {
 					uploadedCount += 1;
+					currentSpeedBps = 0;
+					currentEtaSeconds = 0;
 					if (progressEl) progressEl.style.width = '100%';
-					if (statusEl) statusEl.innerHTML = '<i class="fas fa-check-circle" style="color: #10b981;"></i> Complete';
+					if (statusEl) statusEl.innerHTML = '<i class="fas fa-check-circle" style="color: #10b981;"></i>';
+					if (subStatusEl) subStatusEl.textContent = 'Uploaded';
+					finalizeUploadRow(index, 'completed');
 				} else {
 					failedCount += 1;
-					if (statusEl) statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #ef4444;"></i> Failed';
+					currentSpeedBps = 0;
+					currentEtaSeconds = 0;
+					if (statusEl) statusEl.innerHTML = '<i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>';
+					if (subStatusEl) subStatusEl.textContent = 'Failed';
+					finalizeUploadRow(index, 'failed');
 				}
 				updateSummary();
 			} catch (err) {
-				clearInterval(progressInterval);
 				if (err.name === 'AbortError') {
 					if (cancelAllRequested || cancelledFiles.has(index)) {
-						if (statusEl) statusEl.innerHTML = '<i class="fas fa-ban" style="color: #ef4444;"></i> Cancelled';
+						currentSpeedBps = 0;
+						currentEtaSeconds = 0;
+						if (statusEl) statusEl.innerHTML = '<i class="fas fa-ban" style="color: #ef4444;"></i>';
+						if (subStatusEl) subStatusEl.textContent = 'Cancelled';
 						if (progressEl) progressEl.style.width = '0%';
+						finalizeUploadRow(index, 'cancelled');
 						updateSummary();
 						continue;
 					}
 				}
 				failedCount += 1;
-				if (statusEl) statusEl.innerHTML = '<i class="fas fa-times-circle" style="color: #ef4444;"></i> Failed';
+				currentSpeedBps = 0;
+				currentEtaSeconds = 0;
+				if (statusEl) statusEl.innerHTML = '<i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>';
+				if (subStatusEl) subStatusEl.textContent = 'Failed';
+				finalizeUploadRow(index, 'failed');
 				updateSummary();
 			}
 		}
 
 		currentUploadingIndex = -1;
 		currentUploadController = null;
+		refreshUploadSummary = null;
 
 		if (cancelAllRequested) {
 			window.showError && window.showError('Upload cancelled');
@@ -307,6 +458,7 @@
 		const reopenBtn = document.getElementById('reopenUploadPanelBtn');
 		if (popup) {
 			popup.style.display = 'block';
+			popup.style.opacity = '1';
 			popup.style.width = isMobileProgressView() ? 'calc(100vw - 16px)' : '380px';
 			progressPanelCollapsed = false;
 			updateProgressCollapseUI();
@@ -327,6 +479,7 @@
 		if (popup) {
 			// Slide out animation
 			popup.style.transform = getHiddenTransform();
+			popup.style.opacity = '0';
 			setTimeout(() => {
 				popup.style.display = 'none';
 				if (reopenBtn) reopenBtn.style.display = 'none';
@@ -344,12 +497,14 @@
 
 		if (!progressPanelHidden) {
 			popup.style.transform = getHiddenTransform();
+			popup.style.opacity = '0';
 			progressPanelHidden = true;
 			if (reopenBtn) reopenBtn.style.display = 'flex';
 			return;
 		}
 
 		popup.style.display = 'block';
+		popup.style.opacity = '1';
 		setTimeout(() => {
 			popup.style.transform = getVisibleTransform();
 		}, 10);
@@ -413,7 +568,11 @@
 			fileEl.style.opacity = '0.5';
 		}
 		if (statusEl) {
-			statusEl.innerHTML = '<i class="fas fa-ban" style="color: #ef4444;"></i> Cancelled';
+			statusEl.innerHTML = '<i class="fas fa-ban" style="color: #ef4444;"></i>';
+		}
+		const subStatusEl = document.getElementById(`fileSubStatus_${index}`);
+		if (subStatusEl) {
+			subStatusEl.textContent = 'Cancelled';
 		}
 		if (cancelBtn) {
 			cancelBtn.disabled = true;
@@ -423,12 +582,11 @@
 		if (index === currentUploadingIndex && currentUploadController) {
 			currentUploadController.abort();
 		}
-		
-		// Update summary
-		const summaryEl = document.getElementById('progressPopupSummary');
-		if (summaryEl) {
-			const remaining = selectedFiles.length - cancelledFiles.size;
-			summaryEl.textContent = `Uploading ${remaining} of ${selectedFiles.length} files`;
+
+		finalizeUploadRow(index, 'cancelled');
+
+		if (typeof refreshUploadSummary === 'function') {
+			refreshUploadSummary();
 		}
 	};
 
@@ -458,351 +616,7 @@
 	// Expose open modal for external use
 	window.openUploadModal = openUploadModal;
 
-	// ===== File Details =====
-	window.showFileDetails = (fileId, fileName, fileSize, uploadDate) => {
-		const modal = document.getElementById('fileDetailsModal');
-		const fileNameEl = document.getElementById('detailFileName');
-		const fileSizeEl = document.getElementById('detailFileSize');
-		const uploadDateEl = document.getElementById('detailUploadDate');
-
-		if (fileNameEl) fileNameEl.textContent = fileName;
-		if (fileSizeEl) fileSizeEl.textContent = formatSize(fileSize);
-		if (uploadDateEl) {
-			const date = new Date(uploadDate);
-			uploadDateEl.textContent = date.toLocaleDateString('en-US', { 
-				year: 'numeric', 
-				month: 'long', 
-				day: 'numeric', 
-				hour: '2-digit', 
-				minute: '2-digit' 
-			});
-		}
-		if (modal) modal.style.display = 'flex';
-	};
-
-	// ===== Delete Functions =====
-	window.deleteFileFromDashboard = async (fileId) => {
-		if (!fileId) return;
-		const ok = await confirmAction('Move this file to the Recycle Bin?');
-		if (!ok) return;
-		
-		fetch(`/files/${fileId}`, { method: 'DELETE' })
-			.then((res) => res.json())
-			.then((data) => {
-				if (data.success) {
-					window.showSuccess && window.showSuccess('File deleted successfully');
-					setTimeout(() => location.reload(), 1500);
-				} else {
-					window.showError && window.showError(data.error || 'Failed to delete file');
-				}
-			})
-			.catch((err) => {
-				console.error('Delete error:', err);
-				window.showError && window.showError('Failed to delete file');
-			});
-	};
-
-	// Alias for files page
-	window.deleteFile = window.deleteFileFromDashboard;
-
-	window.restoreFile = async (fileId) => {
-		if (!fileId) return;
-		fetch(`/files/${fileId}/restore`, { method: 'POST' })
-			.then((res) => res.json())
-			.then((data) => {
-				if (data.success) {
-					window.showSuccess && window.showSuccess('File restored successfully');
-					setTimeout(() => location.reload(), 1500);
-				} else {
-					window.showError && window.showError(data.error || 'Failed to restore file');
-				}
-			})
-			.catch((err) => {
-				console.error('Restore error:', err);
-				window.showError && window.showError('Failed to restore file');
-			});
-	};
-
-	window.deleteForever = async (fileId) => {
-		if (!fileId) return;
-		const ok = await confirmAction('Permanently delete this file? This cannot be undone.');
-		if (!ok) return;
-		
-		fetch(`/files/${fileId}/permanent`, { method: 'DELETE' })
-			.then((res) => res.json())
-			.then((data) => {
-				if (data.success) {
-					window.showSuccess && window.showSuccess('File permanently deleted');
-					setTimeout(() => location.reload(), 1500);
-				} else {
-					window.showError && window.showError(data.error || 'Failed to delete file permanently');
-				}
-			})
-			.catch((err) => {
-				console.error('Permanent delete error:', err);
-				window.showError && window.showError('Failed to delete file permanently');
-			});
-	};
-
-	// ===== Rename Functions =====
-	window.showRenameModal = (fileId, fileName) => {
-		const renameFileId = document.getElementById('renameFileId');
-		const renameOriginalExt = document.getElementById('renameOriginalExt');
-		const newFileName = document.getElementById('newFileName');
-		if (!renameModal || !renameFileId || !newFileName) return;
-
-		const lastDotIndex = fileName.lastIndexOf('.');
-		const baseName = lastDotIndex > 0 ? fileName.slice(0, lastDotIndex) : fileName;
-		const ext = lastDotIndex > 0 ? fileName.slice(lastDotIndex) : '';
-		
-		renameFileId.value = fileId;
-		if (renameOriginalExt) renameOriginalExt.value = ext;
-		newFileName.value = baseName;
-		renameModal.style.display = 'flex';
-		newFileName.focus();
-		newFileName.select();
-	};
-
-	window.confirmRename = () => {
-		const renameFileId = document.getElementById('renameFileId');
-		const renameOriginalExt = document.getElementById('renameOriginalExt');
-		const newFileName = document.getElementById('newFileName');
-		if (!renameFileId || !newFileName) return;
-		
-		const fileId = renameFileId.value;
-		const baseName = newFileName.value.trim();
-		const ext = renameOriginalExt ? renameOriginalExt.value : '';
-		const newName = `${baseName}${ext}`;
-		
-		if (!baseName) {
-			window.showError && window.showError('Please enter a file name');
-			return;
-		}
-
-		if (baseName.includes('.')) {
-			window.showError && window.showError('Extension cannot be changed. Please edit only the name.');
-			return;
-		}
-
-		fetch(`/files/${fileId}/rename`, {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ newName }),
-		})
-			.then((res) => res.json())
-			.then((data) => {
-				if (data.success) {
-					if (renameModal) renameModal.style.display = 'none';
-					window.showSuccess && window.showSuccess('File renamed successfully');
-					setTimeout(() => location.reload(), 1500);
-				} else {
-					window.showError && window.showError(data.error || 'Failed to rename file');
-				}
-			})
-			.catch((err) => {
-				console.error('Rename error:', err);
-				window.showError && window.showError('Failed to rename file');
-			});
-	};
-
-	// ===== Share Functions =====
-	window.showShareModal = (fileId) => {
-		const shareFileId = document.getElementById('shareFileId');
-		const shareUsername = document.getElementById('shareUsername');
-		const shareLink = document.getElementById('shareLink');
-		
-		if (!shareModal || !shareFileId || !shareUsername) return;
-		
-		shareFileId.value = fileId;
-		shareUsername.value = '';
-		if (shareLink) shareLink.value = '';
-		
-		// Generate share link for this file
-		generateShareLink(fileId);
-		
-		shareModal.style.display = 'flex';
-		shareUsername.focus();
-	};
-
-	const generateShareLink = async (fileId) => {
-		try {
-			const res = await fetch(`/files/${fileId}/generate-share-link`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' }
-			});
-			const data = await res.json();
-			
-			const shareLinkInput = document.getElementById('shareLink');
-			if (shareLinkInput) {
-				if (data.success && data.shareLink) {
-					shareLinkInput.value = data.shareLink;
-				} else {
-					shareLinkInput.value = 'Failed to generate link';
-				}
-			}
-		} catch (err) {
-			console.error('Error generating share link:', err);
-			const shareLinkInput = document.getElementById('shareLink');
-			if (shareLinkInput) shareLinkInput.value = 'Error generating link';
-		}
-	};
-
-	window.copyShareLink = () => {
-		const linkInput = document.getElementById('shareLink');
-		if (!linkInput || !linkInput.value) {
-			window.showError && window.showError('No link to copy');
-			return;
-		}
-		
-		linkInput.select();
-		document.execCommand('copy');
-		
-		// Show feedback
-		const btn = document.getElementById('copyLinkBtn');
-		if (btn) {
-			const originalHTML = btn.innerHTML;
-			btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-			btn.style.background = '#10b981';
-			
-			setTimeout(() => {
-				btn.innerHTML = originalHTML;
-				btn.style.background = '#06b6d4';
-			}, 2000);
-		}
-	};
-
-	window.confirmShare = () => {
-		const shareFileId = document.getElementById('shareFileId');
-		const shareUsername = document.getElementById('shareUsername');
-		if (!shareFileId || !shareUsername) return;
-		
-		const fileId = shareFileId.value;
-		const username = shareUsername.value.trim();
-		
-		if (!username) {
-			window.showError && window.showError('Please enter a username');
-			return;
-		}
-
-		fetch(`/files/${fileId}/share`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ sharedWithUsername: username }),
-		})
-			.then((res) => res.json())
-			.then((data) => {
-				if (data.success) {
-					if (shareModal) shareModal.style.display = 'none';
-					window.showSuccess && window.showSuccess('File shared successfully!');
-					setTimeout(() => location.reload(), 1500);
-				} else {
-					window.showError && window.showError(data.error || 'Failed to share file');
-				}
-			})
-			.catch((err) => {
-				console.error('Share error:', err);
-				window.showError && window.showError('Failed to share file');
-			});
-	};
-
-	// ===== Bulk Trash Operations (Files page only) =====
-	window.toggleSelectAllTrash = () => {
-		const selectAllCheckbox = document.getElementById('selectAllTrash');
-		const trashCheckboxes = document.querySelectorAll('.trashCheckbox');
-		if (!selectAllCheckbox) return;
-		
-		trashCheckboxes.forEach(checkbox => {
-			checkbox.checked = selectAllCheckbox.checked;
-		});
-		updateTrashSelection();
-	};
-
-	window.updateTrashSelection = () => {
-		const trashCheckboxes = document.querySelectorAll('.trashCheckbox:checked');
-		const selectAllCheckbox = document.getElementById('selectAllTrash');
-		const countEl = document.getElementById('trashSelectedCount');
-		const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-		const bulkRestoreBtn = document.getElementById('bulkRestoreBtn');
-
-		const count = trashCheckboxes.length;
-		if (countEl) countEl.textContent = count + ' selected';
-
-		// Update select all checkbox state
-		const totalCheckboxes = document.querySelectorAll('.trashCheckbox').length;
-		if (selectAllCheckbox) {
-			selectAllCheckbox.checked = count === totalCheckboxes && totalCheckboxes > 0;
-			selectAllCheckbox.indeterminate = count > 0 && count < totalCheckboxes;
-		}
-
-		// Show/hide bulk action buttons
-		if (bulkDeleteBtn) bulkDeleteBtn.style.display = count > 0 ? 'block' : 'none';
-		if (bulkRestoreBtn) bulkRestoreBtn.style.display = count > 0 ? 'block' : 'none';
-	};
-
-	window.bulkDeleteTrash = async () => {
-		const trashCheckboxes = document.querySelectorAll('.trashCheckbox:checked');
-		if (trashCheckboxes.length === 0) {
-			window.showError && window.showError('Please select files to delete');
-			return;
-		}
-
-		const ok = await confirmAction(`Permanently delete ${trashCheckboxes.length} file(s)? This cannot be undone.`);
-		if (!ok) return;
-
-		const fileIds = Array.from(trashCheckboxes).map(cb => cb.value);
-		let deletedCount = 0;
-
-		for (const fileId of fileIds) {
-			try {
-				const res = await fetch(`/files/${fileId}/permanent`, { method: 'DELETE' });
-				const data = await res.json();
-				if (data.success) deletedCount++;
-			} catch (err) {
-				console.error('Error deleting file:', err);
-			}
-		}
-
-		if (deletedCount > 0) {
-			window.showSuccess && window.showSuccess(`${deletedCount} file(s) permanently deleted`);
-			setTimeout(() => location.reload(), 1500);
-		} else {
-			window.showError && window.showError('Failed to delete selected files');
-		}
-	};
-
-	window.bulkRestoreTrash = async () => {
-		const trashCheckboxes = document.querySelectorAll('.trashCheckbox:checked');
-		if (trashCheckboxes.length === 0) {
-			window.showError && window.showError('Please select files to restore');
-			return;
-		}
-
-		const fileIds = Array.from(trashCheckboxes).map(cb => cb.value);
-		let restoredCount = 0;
-
-		for (const fileId of fileIds) {
-			try {
-				const res = await fetch(`/files/${fileId}/restore`, { method: 'POST' });
-				const data = await res.json();
-				if (data.success) restoredCount++;
-			} catch (err) {
-				console.error('Error restoring file:', err);
-			}
-		}
-
-		if (restoredCount > 0) {
-			window.showSuccess && window.showSuccess(`${restoredCount} file(s) restored successfully`);
-			setTimeout(() => location.reload(), 1500);
-		} else {
-			window.showError && window.showError('Failed to restore selected files');
-		}
-	};
-
-	// ===== Sorting Handler (Files page) =====
-	window.handleSort = (sortValue) => {
-		const currentPage = new URLSearchParams(window.location.search).get('page') || '1';
-		window.location.href = `/files?sort=${sortValue}&page=1`;
-	};
+	// Non-upload file actions moved to /js/file-actions.js
 
 	// ===== Event Listeners =====
 	
@@ -849,11 +663,6 @@
 	if (cancelUploadBtn) cancelUploadBtn.addEventListener('click', closeUploadModal);
 	if (selectFilesBtn) selectFilesBtn.addEventListener('click', () => fileInput && fileInput.click());
 
-	// Sort select
-	if (sortSelect) {
-		sortSelect.addEventListener('change', (e) => window.handleSort(e.target.value));
-	}
-
 	// Close modals on outside click
 	[uploadModal, renameModal, shareModal, confirmModal].forEach((modal) => {
 		if (!modal) return;
@@ -867,21 +676,6 @@
 			}
 		});
 	});
-
-	// Enter key helpers
-	const newFileNameInput = document.getElementById('newFileName');
-	if (newFileNameInput) {
-		newFileNameInput.addEventListener('keypress', (e) => {
-			if (e.key === 'Enter') window.confirmRename();
-		});
-	}
-
-	const shareUsernameInput = document.getElementById('shareUsername');
-	if (shareUsernameInput) {
-		shareUsernameInput.addEventListener('keypress', (e) => {
-			if (e.key === 'Enter') window.confirmShare();
-		});
-	}
 
 	// Upload on button click
 	if (uploadBtn) {
