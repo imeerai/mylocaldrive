@@ -39,9 +39,11 @@
 
   <%- include('../partials/footer') %>
 
-  <script src="/js/custom-modal.js"></script>
-  <script src="/js/floating-upload.js"></script>
-  <script src="/js/main.js"></script>
+  <script src="/js/custom-modal.js" defer></script>
+  <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
+  <script src="/js/floating-upload.js" defer></script>
+  <% } %>
+  <script src="/js/main.js" defer></script>
   
   <!-- Auto-dismiss flash messages after 2 seconds -->
   <script>
