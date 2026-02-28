@@ -2,47 +2,22 @@ const File = require('../models/file.model');
 const User = require('../models/user.model');
 const fs = require('fs');
 const mongoose = require('mongoose');
-const { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
 const r2 = require('../config/r2');
-
-const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB per file
-const USER_QUOTA = 500 * 1024 * 1024; // 500 MB per user
-const GLOBAL_QUOTA = 9 * 1024 * 1024 * 1024; // 9 GB total pool
-const BUCKET = process.env.R2_BUCKET;
-
-const formatStorage = (bytes) => {
-	if (bytes < 1024) return { storageUsed: bytes.toFixed(2), storageUnit: 'B' };
-	if (bytes < 1024 * 1024) return { storageUsed: (bytes / 1024).toFixed(2), storageUnit: 'KB' };
-	if (bytes < 1024 * 1024 * 1024) return { storageUsed: (bytes / (1024 * 1024)).toFixed(2), storageUnit: 'MB' };
-	return { storageUsed: (bytes / (1024 * 1024 * 1024)).toFixed(2), storageUnit: 'GB' };
-};
-
-const safeSegment = (value) => {
-	const clean = (value || '').toString().trim().replace(/[^a-zA-Z0-9._-]/g, '_');
-	return clean || 'file';
-};
-
-const buildObjectKey = (reqUser, originalName) => {
-	const userSegment = safeSegment(reqUser.username || reqUser.email || reqUser.id);
-	const fileSegment = safeSegment(originalName);
-	return `${userSegment}/${Date.now()}-${fileSegment}`;
-};
-
-const aggregateUsage = async (match) => {
-	const agg = await File.aggregate([
-		{ $match: match },
-		{ $group: { _id: null, total: { $sum: '$fileSize' } } }
-	]);
-	return agg[0]?.total || 0;
-};
-
-const canAccessFile = (file, userId) => {
-	const isOwner = String(file.userId) === String(userId);
-	const isShared = file.sharedWith?.some((id) => String(id) === String(userId));
-	return isOwner || isShared;
-};
-
-const storageReady = () => Boolean(BUCKET && process.env.R2_ENDPOINT && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY);
+const {
+	MAX_FILE_SIZE,
+	USER_QUOTA,
+	GLOBAL_QUOTA,
+	BUCKET,
+	LOCAL_FALLBACK_ENABLED,
+	isNetworkTimeoutError,
+	cleanupTempUploads,
+	formatStorage,
+	buildObjectKey,
+	aggregateUsage,
+	canAccessFile,
+	storageReady,
+} = require('./file.storage-utils');
 
 async function getFiles(req, res, next) {
 	try {
@@ -129,17 +104,30 @@ async function uploadMultipleFiles(req, res, next) {
 		}
 
 		const uploadedFiles = [];
+		const retainedLocalPaths = new Set();
+		let usedLocalFallback = false;
 
 		for (const file of req.files) {
 			const key = buildObjectKey(req.user, file.originalname);
+			let storedInR2 = true;
 
-			await r2.send(new PutObjectCommand({
-				Bucket: BUCKET,
-				Key: key,
-				Body: fs.createReadStream(file.path),
-				ContentType: file.mimetype,
-				ContentLength: file.size
-			}));
+			try {
+				await r2.send(new PutObjectCommand({
+					Bucket: BUCKET,
+					Key: key,
+					Body: fs.createReadStream(file.path),
+					ContentType: file.mimetype,
+					ContentLength: file.size
+				}));
+			} catch (storageErr) {
+				if (LOCAL_FALLBACK_ENABLED && isNetworkTimeoutError(storageErr)) {
+					storedInR2 = false;
+					usedLocalFallback = true;
+					console.warn(`[UPLOAD] R2 timeout, using local fallback for: ${file.originalname}`);
+				} else {
+					throw storageErr;
+				}
+			}
 
 			const newFile = new File({
 				userId: req.user.id,
@@ -147,27 +135,38 @@ async function uploadMultipleFiles(req, res, next) {
 				originalName: file.originalname,
 				mimeType: file.mimetype,
 				fileSize: file.size,
-				filePath: null,
-				r2Key: key,
-				bucket: BUCKET,
+				filePath: storedInR2 ? null : file.path,
+				r2Key: storedInR2 ? key : null,
+				bucket: storedInR2 ? BUCKET : null,
 				isDeleted: false
 			});
 
 			await newFile.save();
 			uploadedFiles.push(newFile);
+			if (!storedInR2 && file.path) retainedLocalPaths.add(file.path);
 
-			if (file.path && fs.existsSync(file.path)) {
+			if (storedInR2 && file.path && fs.existsSync(file.path)) {
 				fs.unlinkSync(file.path);
 			}
 		}
 
 		res.json({
 			success: true,
-			message: `${uploadedFiles.length} file(s) uploaded successfully`,
+			message: usedLocalFallback
+				? `${uploadedFiles.length} file(s) uploaded successfully (temporary local storage mode)`
+				: `${uploadedFiles.length} file(s) uploaded successfully`,
+			storageMode: usedLocalFallback ? 'local-fallback' : 'r2',
 			files: uploadedFiles
 		});
 	} catch (err) {
 		console.error('Error uploading files:', err);
+		if (isNetworkTimeoutError(err)) {
+			cleanupTempUploads(req.files);
+			return res.status(503).json({
+				error: 'Cloud storage timeout. Please retry in a few moments.'
+			});
+		}
+		cleanupTempUploads(req.files, retainedLocalPaths);
 		next(err);
 	}
 }
@@ -461,9 +460,62 @@ async function accessSharedFile(req, res, next) {
 	}
 }
 
+async function getStorageHealth(req, res) {
+	const required = ['R2_ENDPOINT', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET'];
+	const missing = required.filter((name) => !process.env[name]);
+	const localFallbackEnabled = LOCAL_FALLBACK_ENABLED;
+
+	if (missing.length > 0) {
+		return res.json({
+			success: false,
+			status: 'misconfigured',
+			reachable: false,
+			mode: localFallbackEnabled ? 'local-fallback' : 'unavailable',
+			message: 'Cloud storage env vars are missing',
+			missing,
+			localFallbackEnabled
+		});
+	}
+
+	try {
+		await r2.send(new HeadBucketCommand({ Bucket: BUCKET }));
+		return res.json({
+			success: true,
+			status: 'healthy',
+			reachable: true,
+			mode: 'r2',
+			message: 'Cloud storage is reachable',
+			localFallbackEnabled
+		});
+	} catch (err) {
+		if (isNetworkTimeoutError(err)) {
+			return res.status(503).json({
+				success: false,
+				status: 'degraded',
+				reachable: false,
+				mode: localFallbackEnabled ? 'local-fallback' : 'unavailable',
+				message: 'Cloud storage timeout/unreachable',
+				errorCode: err.code || err.name,
+				localFallbackEnabled
+			});
+		}
+
+		return res.status(500).json({
+			success: false,
+			status: 'error',
+			reachable: false,
+			mode: localFallbackEnabled ? 'local-fallback' : 'unavailable',
+			message: 'Storage health check failed',
+			errorCode: err.code || err.name || 'UNKNOWN',
+			localFallbackEnabled
+		});
+	}
+}
+
 module.exports = {
 	getFiles,
 	uploadMultipleFiles,
+	getStorageHealth,
 	downloadFile,
 	deleteFile,
 	restoreFile,
