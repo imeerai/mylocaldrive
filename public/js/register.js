@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalBtnText = submitBtn ? submitBtn.textContent : '';
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Sending verification link...';
+            submitBtn.textContent = 'Creating account...';
         }
 
         try {
