@@ -65,6 +65,7 @@ router.post('/files/:fileId/generate-share-link', requireAuth, fileController.ge
 
 // Stats API route
 router.get('/api/stats', apiLimiter, statsController.getPlatformStats);
+router.get('/api/storage-health', requireAuth, apiLimiter, fileController.getStorageHealth);
 
 // Public share link route
 router.get('/share/:shareCode', fileController.accessSharedFile);
