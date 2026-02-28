@@ -14,8 +14,7 @@ MyDrive is a full-stack cloud storage application where users can create account
 
 ## What We Actually Built
 
-- Complete auth flow: register, login, logout, OTP verification
-- Password recovery flow: forgot password, OTP verify, reset password
+- Complete auth flow: register, login, logout
 - File manager: upload, rename, delete, download
 - User dashboard with usage/stats and file operations
 - Profile management: update name and change password
@@ -37,7 +36,7 @@ MyDrive is a full-stack cloud storage application where users can create account
 ### Storage & Email
 - Cloudflare R2 (S3-compatible object storage)
 - Multer (file upload handling)
-- Nodemailer + SMTP (OTP and reset emails)
+- Nodemailer + SMTP (contact emails)
 
 ### Security & Validation
 - JWT authentication
