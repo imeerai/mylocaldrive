@@ -14,23 +14,23 @@ router.get('/', (req, res) => {
    if (res.locals.isLoggedIn) {
     return res.redirect('/dashboard');
   }
-  res.render('pages/home', { title: "IMEER.ai" });
+  res.render('pages/home', { title: "MyDrive · A calmer home for your files" });
 });
 
 // About page route
 router.get('/about', (req, res) => {
-  res.render('pages/about', { title: "About Us - IMEER.ai" });
+  res.render('pages/about', { title: "About · MyDrive" });
 });
 
 // Features page route
 router.get('/features', (req, res) => {
-  res.render('pages/features', { title: "Features - IMEER.ai" });
+  res.render('pages/features', { title: "Features · MyDrive" });
 });
 
 // Contact page route
 router.get('/contact', (req, res) => {
   res.render('pages/contact', { 
-    title: "Contact Us - IMEER.ai",
+    title: "Contact · MyDrive",
     user: res.locals.user || null,
     isLoggedIn: res.locals.isLoggedIn
   });
@@ -48,6 +48,8 @@ router.get('/dashboard', requireAuth, dashboardController.getDashboard);
 
 // Profile page routes
 router.get('/profile', requireAuth, profileController.getProfile);
+router.get('/profile/edit-name', requireAuth, profileController.getEditProfileName);
+router.post('/profile/edit-name', requireAuth, profileController.updateProfileName);
 router.get('/profile/change-password', requireAuth, profileController.getChangePassword);
 router.post('/profile/change-password', requireAuth, profileController.changePassword);
 router.post('/profile/delete-account', requireAuth, profileController.deleteAccount);

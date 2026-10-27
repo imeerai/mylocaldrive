@@ -1,0 +1,16 @@
+<div class="sky relative hidden overflow-hidden rounded-[28px] d:block">
+  <div class="cloud top-[120px] left-[8%] h-[100px] w-[380px] opacity-90" aria-hidden="true"></div>
+  <div class="cloud top-[200px] right-[6%] h-[90px] w-[320px] opacity-80 [animation-duration:28s]" aria-hidden="true"></div>
+  <div class="absolute inset-x-0 bottom-0 h-[420px]" aria-hidden="true"><%- include('landscape') %></div>
+  <div class="relative flex h-full flex-col justify-between p-12">
+    <p class="serif m-0 max-w-[420px] text-[46px] leading-[1.02] text-ink"><%- tagline %></p>
+    <div class="floaty mb-24 w-[340px] self-end rounded-[22px] border border-white/70 bg-white/55 p-3 shadow-[0_40px_80px_-40px_rgba(23,40,30,.45)] backdrop-blur-md" aria-hidden="true">
+      <% cards.forEach(function (c, i) { %>
+      <div class="in mt-2 flex items-center gap-3 rounded-2xl bg-white p-3 text-[13px] first:mt-0" style="--d: <%= 0.6 + i * 0.35 %>s">
+        <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] <%= c[2] %>"><%- include('icon', {n:c[3], s:16, w:2}) %></span>
+        <span class="min-w-0 flex-1"><span class="block truncate font-semibold"><%= c[0] %></span><span class="mt-1.5 block h-1 overflow-hidden rounded-full bg-line-soft"><span class="grow-w block h-full rounded-full bg-forest" style="width: <%= c[1] %>; animation-delay: <%= 0.9 + i * 0.35 %>s"></span></span></span>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+</div>

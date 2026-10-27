@@ -42,15 +42,42 @@ const getDashboard = async (req, res, next) => {
     const totalSize = allFiles.reduce((sum, file) => sum + file.fileSize, 0);
     const { storageUsed, storageUnit } = formatStorage(totalSize);
 
+    // Group stored bytes by broad file type for the dashboard breakdown
+    const typeOf = (f) => {
+      const mime = String(f.mimeType || '');
+      const ext = String(f.originalName || '').split('.').pop().toLowerCase();
+      if (mime.startsWith('image/')) return 'image';
+      if (mime.startsWith('video/') || mime.startsWith('audio/')) return 'media';
+      if (mime.includes('pdf') || mime.startsWith('text/') || ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'csv', 'md'].includes(ext)) return 'doc';
+      return 'other';
+    };
+    const typeMeta = {
+      image: { label: 'Images', color: 'bg-amber' },
+      doc: { label: 'Documents', color: 'bg-forest' },
+      media: { label: 'Video & audio', color: 'bg-slate' },
+      other: { label: 'Other', color: 'bg-faint' }
+    };
+    const byType = Object.entries(allFiles.reduce((acc, f) => {
+      const k = typeOf(f);
+      acc[k] = acc[k] || { bytes: 0, count: 0 };
+      acc[k].bytes += f.fileSize || 0;
+      acc[k].count += 1;
+      return acc;
+    }, {}))
+      .map(([k, v]) => ({ key: k, ...typeMeta[k], ...v }))
+      .sort((a, b) => b.bytes - a.bytes);
+
     res.render('pages/dashboard', { 
-      title: "Dashboard - IMEER.ai", 
+      title: "Dashboard · MyDrive", 
       isLoggedIn: true,
       user: user,
       files: files,
       sharedFiles,
       fileCount: allFiles.length,
       storageUsed: storageUsed,
-      storageUnit: storageUnit
+      storageUnit: storageUnit,
+      storageBytes: totalSize,
+      byType
     });
   } catch (err) {
     console.error("Error fetching dashboard:", err);

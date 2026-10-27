@@ -1,91 +1,12 @@
 <!doctype html>
-<!-- Main layout template for all pages -->
-<html>
+<html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />    
-    <title><%= title || 'My Drive' %></title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'><path d='M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z'/><polyline points='13 2 13 9 20 9'/></svg>">
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <%- include('../partials/head') %>
   </head>
-
-  <body>
-
-  <%- include('../partials/header') %>
-  
-  <!-- Flash Messages (hide on auth/security pages) -->
-  <% if (success && !title.includes('Login') && !title.includes('Register') && !title.includes('Forgot') && !title.includes('Reset') && !title.includes('Security Settings')) { %>
-  <div id="flashMessage" class="flash-toast flash-success" role="status" aria-live="polite">
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-      <i class="fas fa-check-circle" style="flex-shrink: 0; font-size: 1.1rem;"></i>
-      <p style="margin: 0; flex: 1;"><%= success %></p>
-    </div>
-  </div>
-  <% } %>
-  
-  <% if (error && !title.includes('Login') && !title.includes('Register') && !title.includes('Forgot') && !title.includes('Reset') && !title.includes('Security Settings')) { %>
-  <div id="flashMessage" class="flash-toast flash-error" role="status" aria-live="polite">
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-      <i class="fas fa-exclamation-circle" style="flex-shrink: 0; font-size: 1.1rem;\"></i>
-      <p style="margin: 0; flex: 1;\"><%= error %></p>
-    </div>
-  </div>
-  <% } %>
-  
-  <main>
+  <body class="overflow-x-clip">
+    <%- include('../partials/flash') %>
     <%- body %>
-  </main>
-
-  <%- include('../partials/footer') %>
-
-  <script src="/js/custom-modal.js" defer></script>
-  <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
-  <script src="/js/floating-upload.js" defer></script>
-  <% } %>
-  <script src="/js/main.js" defer></script>
-  
-  <!-- Auto-dismiss flash messages after 2 seconds -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const authSyncKey = 'mydrive-auth-state';
-      const isLoggedIn = <%= typeof isLoggedIn !== 'undefined' && isLoggedIn ? 'true' : 'false' %>;
-
-      try {
-        const previousStateRaw = localStorage.getItem(authSyncKey);
-        const previousState = previousStateRaw ? JSON.parse(previousStateRaw) : null;
-        if (!previousState || previousState.loggedIn !== isLoggedIn) {
-          localStorage.setItem(authSyncKey, JSON.stringify({ loggedIn: isLoggedIn, ts: Date.now() }));
-        }
-      } catch (err) {}
-
-      window.addEventListener('storage', (event) => {
-        if (event.key !== authSyncKey || !event.newValue) return;
-        try {
-          const nextState = JSON.parse(event.newValue);
-          if (typeof nextState.loggedIn === 'boolean' && nextState.loggedIn !== isLoggedIn) {
-            window.location.reload();
-          }
-        } catch (err) {}
-      });
-
-      const logoutLink = document.getElementById('logoutLink');
-      if (logoutLink) {
-        logoutLink.addEventListener('click', () => {
-          try {
-            localStorage.setItem(authSyncKey, JSON.stringify({ loggedIn: false, ts: Date.now() }));
-          } catch (err) {}
-        });
-      }
-
-      const flashMessage = document.getElementById('flashMessage');
-      if (flashMessage) {
-        setTimeout(() => {
-          flashMessage.style.animation = 'toastDropDown 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) reverse';
-          setTimeout(() => flashMessage.remove(), 320);
-        }, 2000);
-      }
-    });
-  </script>
-</body>
+    <%- include('../partials/footer') %>
+    <%- include('../partials/scripts') %>
+  </body>
 </html>

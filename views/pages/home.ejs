@@ -1,109 +1,210 @@
 <% layout('layouts/main') %>
 
-<section class="hero">
-	<div class="container hero-grid">
-		<div class="hero-copy">
-			<div class="pill">Secure cloud workspace</div>
-			<h1>Store, share, and sync files without friction.</h1>
-			<p>
-				MyDrive keeps your documents safe, organized, and accessible on every device. Collaborate
-				instantly with a clean, focused experience.
-			</p>
-			<div class="hero-actions">
-				<a href="/user/register" class="btn btn-primary">Get Started</a>
-				<a href="/user/login" class="btn btn-outline">Sign In</a>
-			</div>
-			<div class="hero-meta">
-				<div>
-					<strong>Privacy-first</strong>
-					<span>Encrypted at rest and in transit</span>
-				</div>
-				<div>
-					<strong>Fast onboarding</strong>
-					<span>Create an account in under a minute</span>
-				</div>
-			</div>
-		</div>
+<!-- HERO -->
+<section class="relative overflow-clip">
+  <div class="sky absolute inset-0" aria-hidden="true"></div>
+  <div class="cloud top-[380px] left-[2%] h-[120px] w-[520px] opacity-90" aria-hidden="true"></div>
+  <div class="cloud top-[340px] right-[4%] h-[110px] w-[440px] opacity-85 [animation-duration:30s]" aria-hidden="true"></div>
+  <div class="cloud top-[430px] left-[40%] h-20 w-[300px] opacity-70 [animation-duration:20s]" aria-hidden="true"></div>
+  <div class="absolute inset-x-0 top-[400px] h-[760px]" aria-hidden="true"><%- include('../partials/landscape-hero') %></div>
+  <svg class="bird absolute top-[470px] right-[17%]" aria-hidden="true" width="120" height="40" viewBox="0 0 120 40"><path d="M10 20q6-6 12 0q6-6 12 0" fill="none" stroke="#5f7468" stroke-width="2" stroke-linecap="round"/><path d="M70 10q4-4 8 0q4-4 8 0" fill="none" stroke="#5f7468" stroke-width="1.6" stroke-linecap="round"/></svg>
 
-		<div class="hero-panel">
-			<div class="panel-header">
-				<span class="status-dot"></span>
-				<span>Platform status</span>
-			</div>
-			<div class="panel-body">
-				<div class="stat">
-					<p>Active users</p>
-					<h3 id="totalUsers">Loading...</h3>
-					<div class="chip">Trust us daily</div>
-				</div>
-				<div class="stat">
-					<p>Total storage</p>
-					<h3 id="totalStorage">Loading...</h3>
-					<div class="chip">Secure cloud</div>
-				</div>
-				<div class="stat">
-					<p>Uptime</p>
-					<h3 id="uptime">99.9%</h3>
-					<div class="chip">Always available</div>
-				</div>
-			</div>
-		</div>
-	</div>
+  <%- include('../partials/header', { currentPage: 'home' }) %>
+
+  <div class="relative px-5 pt-12 text-center d:px-10 d:pt-16">
+    <span class="pill in" style="--d:.1s"><span class="live size-[7px] rounded-full bg-forest"></span>Now with folder-friendly uploads</span>
+    <h1 class="serif in mx-auto mt-7 max-w-[900px] text-[52px] leading-[.98] d:text-[96px]" style="--d:.2s">A calmer home <br>for <i>everything</i> you keep</h1>
+    <p class="in mx-auto mt-6 max-w-[560px] text-[17px] leading-relaxed text-muted d:text-[19px]" style="--d:.35s">Upload, organise and share your files from one quiet drive. 500 MB free, private by default, no clutter.</p>
+    <div class="in mt-8 flex items-center justify-center gap-3" style="--d:.5s">
+      <a class="btn btn-dark" href="/user/register">Start for free</a>
+      <a class="inline-flex size-12 items-center justify-center rounded-full border border-[#dfe3dd] bg-white transition hover:scale-105" href="/features" aria-label="See how it works"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="#171b18"/></svg></a>
+    </div>
+  </div>
+
+  <!-- App preview with motion graphic -->
+  <div class="mock-wrap in relative flex justify-center px-5 pt-[90px] d:px-10 d:pt-[70px]" style="--d:.7s" aria-hidden="true">
+    <div class="drag-fx hero-fx left-[calc(50%-640px)] top-5">
+      <div class="flex h-[90px] w-[74px] flex-col justify-between rounded-xl border border-line bg-white p-2.5 shadow-[0_18px_30px_-16px_rgba(23,40,30,.5)]">
+        <span class="inline-flex size-[26px] items-center justify-center rounded-[7px] bg-amber-soft text-amber"><%- include('../partials/icon', {n:'image', s:14, w:2}) %></span>
+        <span class="text-[10px] font-semibold text-muted">photo.jpg</span>
+      </div>
+      <svg width="22" height="22" viewBox="0 0 24 24" class="absolute -right-3.5 -bottom-3"><path d="M5 3l14 7-6 2-2 6z" fill="#171b18" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
+    </div>
+    <span class="ripple-fx hero-fx top-[255px] left-[calc(50%-205px)]"></span>
+    <div class="toast-fx tA hero-fx top-[330px] left-[calc(50%-650px)]">
+      <span class="inline-flex size-[34px] items-center justify-center rounded-[10px] bg-sage text-forest-deep"><%- include('../partials/icon', {n:'check', s:16, w:2.2}) %></span>
+      <span><span class="block font-semibold">photo.jpg uploaded</span><span class="mt-[7px] block h-1 w-[150px] overflow-hidden rounded-full bg-line-soft"><span class="tbar block h-full rounded-full bg-forest"></span></span></span>
+    </div>
+    <div class="toast-fx tB hero-fx top-[210px] right-[calc(50%-660px)]">
+      <span class="inline-flex size-[34px] items-center justify-center rounded-[10px] bg-slate-soft text-slate"><%- include('../partials/icon', {n:'link', s:16, w:2}) %></span>
+      <span><span class="block font-semibold">Share link copied</span><span class="mt-0.5 block text-[12.5px] text-faint">Anyone with the link can view</span></span>
+    </div>
+
+    <div class="mock box-border w-full max-w-[1100px] rounded-t-[22px] border border-b-0 border-white/70 bg-white/40 px-2.5 pt-2.5 shadow-[0_40px_80px_-40px_rgba(23,40,30,.45)] backdrop-blur-md">
+      <div class="grid min-h-[560px] grid-cols-[220px_1fr] overflow-hidden rounded-t-[14px] bg-white text-left">
+        <div class="flex flex-col gap-0.5 border-r border-line-soft px-3 py-3.5 text-[13px] text-[#3b403c]">
+          <div class="flex items-center gap-2.5 px-2 pt-1 pb-3.5"><span class="inline-flex size-[26px] items-center justify-center rounded-[7px] bg-ink text-xs font-semibold text-white">M</span><span class="text-sm font-semibold text-ink">MyDrive</span></div>
+          <span class="flex h-[34px] items-center gap-2.5 rounded-lg bg-[#f2f4f1] px-2.5 font-medium text-ink"><%- include('../partials/icon', {n:'home', s:15}) %>Home</span>
+          <span class="flex h-[34px] items-center gap-2.5 px-2.5"><%- include('../partials/icon', {n:'folder', s:15}) %>My files<span class="ml-auto text-[11px] text-faint">128</span></span>
+          <span class="flex h-[34px] items-center gap-2.5 px-2.5"><%- include('../partials/icon', {n:'share', s:15}) %>Shared</span>
+          <span class="flex h-[34px] items-center gap-2.5 px-2.5"><%- include('../partials/icon', {n:'clock', s:15}) %>Recent</span>
+          <span class="flex h-[34px] items-center gap-2.5 px-2.5"><%- include('../partials/icon', {n:'trash', s:15}) %>Recycle bin</span>
+          <div class="px-2.5 pt-[18px] pb-1.5 text-[11px] font-semibold tracking-[.6px] text-faint">FOLDERS</div>
+          <span class="flex h-[34px] items-center gap-2.5 px-2.5"><span class="size-[9px] rounded-[3px] bg-forest"></span>University</span>
+          <span class="flex h-[34px] items-center gap-2.5 px-2.5"><span class="size-[9px] rounded-[3px] bg-[#d98e2b]"></span>Photos</span>
+          <span class="flex h-[34px] items-center gap-2.5 px-2.5"><span class="size-[9px] rounded-[3px] bg-slate"></span>Projects</span>
+          <div class="mt-auto px-2.5 pt-3.5 pb-1.5">
+            <div class="flex justify-between text-xs"><span>Storage</span><span class="text-muted">190 / 500 MB</span></div>
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-line-soft"><div class="h-full w-[38%] rounded-full bg-ink"></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex h-[54px] items-center justify-between gap-4 border-b border-line-soft px-[18px]">
+            <div class="flex h-8 max-w-[360px] flex-1 items-center gap-2 rounded-lg bg-[#f4f5f3] px-2.5 text-[12.5px] text-faint"><%- include('../partials/icon', {n:'search', s:14, w:2}) %>Search files and folders</div>
+            <span class="inline-flex size-7 items-center justify-center rounded-full bg-sage text-[11px] font-semibold text-forest-deep">MD</span>
+          </div>
+          <div class="px-[22px] py-5">
+            <div class="text-[17px] font-semibold">Welcome back</div>
+            <div class="mt-3.5 flex flex-wrap gap-2 text-[12.5px] font-medium">
+              <span class="inline-flex h-[30px] items-center rounded-full bg-ink px-3 text-white">↑ Upload</span>
+              <span class="inline-flex h-[30px] items-center rounded-full border border-line px-3">+ New folder</span>
+              <span class="inline-flex h-[30px] items-center rounded-full border border-line px-3">Share link</span>
+              <span class="inline-flex h-[30px] items-center rounded-full border border-line px-3">↓ Download</span>
+            </div>
+            <div class="mt-[18px] grid grid-cols-[1.5fr_1fr] gap-3.5">
+              <div class="rounded-xl border border-line-soft p-4">
+                <div class="text-[12.5px] font-medium text-muted">Storage used</div>
+                <div class="mt-1.5 text-[26px] font-semibold tracking-[-.5px]">190.4 <span class="text-sm font-medium text-faint">MB of 500 MB</span></div>
+                <div class="mt-1 text-[11.5px] text-forest">+12.6 MB this week</div>
+                <svg viewBox="0 0 400 110" preserveAspectRatio="none" class="mt-2 h-[110px] w-full"><defs><linearGradient id="gfh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f7d5a" stop-opacity=".22"/><stop offset="1" stop-color="#3f7d5a" stop-opacity="0"/></linearGradient></defs><path d="M0 92 C40 88 60 80 100 78 C140 76 160 70 200 62 C240 56 260 60 300 46 C340 34 370 30 400 18 L400 110 L0 110Z" fill="url(#gfh)"/><path d="M0 92 C40 88 60 80 100 78 C140 76 160 70 200 62 C240 56 260 60 300 46 C340 34 370 30 400 18" fill="none" stroke="#3f7d5a" stroke-width="2.4"/></svg>
+              </div>
+              <div class="grid content-start gap-3 rounded-xl border border-line-soft p-4 text-[13px]">
+                <div class="text-[12.5px] font-medium text-muted">By type</div>
+                <div class="flex justify-between"><span>Images</span><b class="font-semibold">92.1 MB</b></div>
+                <div class="flex justify-between"><span>Documents</span><b class="font-semibold">54.8 MB</b></div>
+                <div class="flex justify-between"><span>Video</span><b class="font-semibold">38.0 MB</b></div>
+                <div class="flex justify-between"><span>Other</span><b class="font-semibold">5.5 MB</b></div>
+              </div>
+            </div>
+            <div class="mt-5 text-[13.5px] font-semibold">Recent files</div>
+            <div class="mt-2.5 overflow-hidden rounded-xl border border-line-soft text-[12.5px]">
+              <div class="grid grid-cols-[2fr_1fr_1fr_1fr] bg-[#fafbf9] px-3.5 py-[11px] text-[11.5px] text-faint"><span>Name</span><span>Size</span><span>Modified</span><span>Access</span></div>
+              <div class="grid grid-cols-[2fr_1fr_1fr_1fr] border-t border-line-soft px-3.5 py-[11px]"><span>final-thesis-v7.pdf</span><span>812 KB</span><span>Today</span><span class="text-forest">Shared</span></div>
+              <div class="grid grid-cols-[2fr_1fr_1fr_1fr] border-t border-line-soft px-3.5 py-[11px]"><span>sunset.jpg</span><span>4.2 MB</span><span>Yesterday</span><span class="text-faint">Private</span></div>
+              <div class="grid grid-cols-[2fr_1fr_1fr_1fr] border-t border-line-soft px-3.5 py-[11px]"><span>project-backup.zip</span><span>128 MB</span><span>Oct 18</span><span class="text-amber">Link shared</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<section class="feature-band">
-	<div class="container feature-grid">
-		<div class="feature">
-			<div class="icon-badge">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M4 4h16v16H4z"></path>
-					<path d="M4 9h16"></path>
-					<path d="M9 20V9"></path>
-				</svg>
-			</div>
-			<h3>Organized folders</h3>
-			<p>Keep projects tidy with smart collections and quick filters.</p>
-		</div>
-		<div class="feature">
-			<div class="icon-badge">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<circle cx="12" cy="12" r="10"></circle>
-					<path d="M2 12h20"></path>
-					<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"></path>
-					<path d="M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10"></path>
-				</svg>
-			</div>
-			<h3>Access anywhere</h3>
-			<p>Work seamlessly from desktop, tablet, or phone with synced changes.</p>
-		</div>
-		<div class="feature">
-			<div class="icon-badge">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-					<polyline points="17 8 12 3 7 8"></polyline>
-					<line x1="12" y1="3" x2="12" y2="15"></line>
-				</svg>
-			</div>
-			<h3>Secure by default</h3>
-			<p>Multi-layer security with audit trails and activity alerts.</p>
-		</div>
-	</div>
+<!-- FILE TYPES -->
+<section class="sv px-5 pt-[70px] pb-5 text-center d:px-10">
+  <div class="text-sm text-muted">Every kind of file, kept in one place</div>
+  <div class="serif mt-6 flex flex-wrap justify-center gap-x-[46px] gap-y-3 text-2xl text-[#8a918c]"><span>PDF</span><span>JPG</span><span>PNG</span><span>MP4</span><span>DOCX</span><span>ZIP</span><span>CSV</span><span>MP3</span></div>
 </section>
 
-<script>
-	// Fetch and display real platform stats
-	async function loadStats() {
-		try {
-			const response = await fetch('/api/stats');
-			const data = await response.json();
-			
-			document.getElementById('totalUsers').textContent = data.totalUsers + '+';
-			document.getElementById('totalStorage').textContent = data.totalStorage;
-		} catch (error) {
-			console.error('Error loading stats:', error);
-		}
-	}
-	
-	// Load stats when page loads
-	loadStats();
-</script>
+<!-- FEATURES BENTO -->
+<section class="px-5 py-20 d:px-16 d:py-[110px]">
+  <div class="sv mx-auto max-w-[720px] text-center">
+    <span class="pill">Features</span>
+    <h2 class="serif mt-5 text-[44px] leading-none d:text-[68px]">Everything a drive needs, <i>nothing</i> it doesn't</h2>
+  </div>
+  <div class="mt-14 grid grid-cols-1 gap-[18px] d:grid-cols-3">
+    <div class="card card-hover sv grid items-center gap-6 d:col-span-2 d:grid-cols-2">
+      <div><h3 class="m-0 text-[22px] font-semibold">Drag, drop, done</h3><p class="mt-2.5 text-[15.5px] leading-relaxed text-muted">Throw in a batch of files. Uploads stream straight to storage with live progress you can cancel.</p></div>
+      <div class="flex h-[200px] items-end justify-center gap-3 rounded-2xl border-[1.5px] border-dashed border-[#cfd5cd] bg-[#f7f9f6] pb-[26px]" aria-hidden="true">
+        <span class="f1 inline-flex h-[78px] w-16 items-end justify-center rounded-[10px] border border-line bg-white pb-2 text-[11px] font-semibold text-amber">JPG</span>
+        <span class="f2 inline-flex h-[78px] w-16 items-end justify-center rounded-[10px] border border-line bg-white pb-2 text-[11px] font-semibold text-forest">PDF</span>
+        <span class="f3 inline-flex h-[78px] w-16 items-end justify-center rounded-[10px] border border-line bg-white pb-2 text-[11px] font-semibold text-slate">ZIP</span>
+      </div>
+    </div>
+    <div class="card card-hover sv">
+      <h3 class="m-0 text-[22px] font-semibold">See where space goes</h3>
+      <p class="mt-2.5 text-[15.5px] leading-relaxed text-muted">A clear meter for your 500 MB.</p>
+      <div class="relative mt-4 flex justify-center" aria-hidden="true">
+        <svg width="130" height="130" viewBox="0 0 120 120"><circle cx="60" cy="60" r="48" fill="none" stroke="#eef0ec" stroke-width="12"/><circle class="ring" cx="60" cy="60" r="48" fill="none" stroke="#3f7d5a" stroke-width="12" stroke-linecap="round" stroke-dasharray="302" stroke-dashoffset="115" transform="rotate(-90 60 60)"/></svg>
+        <span class="serif absolute top-11 text-[32px]">38%</span>
+      </div>
+    </div>
+    <div class="card card-hover sv">
+      <h3 class="m-0 text-[22px] font-semibold">Share with a link</h3>
+      <p class="mt-2.5 text-[15.5px] leading-relaxed text-muted">Send a file to another user, or copy a public link in one click.</p>
+      <div class="mt-5 flex items-center gap-2.5 rounded-xl border border-[#e6e9e4] py-2.5 pr-2.5 pl-3.5 text-[13px]" aria-hidden="true"><span class="flex-1 text-muted">mydrive.app/share/k9x2…</span><span class="inline-flex h-[30px] items-center rounded-full bg-ink px-3 text-[12.5px] text-white">Copy</span></div>
+      <div class="mt-3 flex gap-2 text-[12.5px]" aria-hidden="true"><span class="rounded-full border border-line px-3 py-1.5">by username</span><span class="rounded-full bg-sage px-3 py-1.5 text-forest-deep">by link</span></div>
+    </div>
+    <div class="card card-hover sv grid items-center gap-6 d:col-span-2 d:grid-cols-[1fr_1.3fr]">
+      <div><h3 class="m-0 text-[22px] font-semibold">A recycle bin that forgives</h3><p class="mt-2.5 text-[15.5px] leading-relaxed text-muted">Deleted something by mistake? Restore it, one file or in bulk, until you empty it for good.</p></div>
+      <div class="grid grid-cols-3 gap-2.5" aria-hidden="true">
+        <div class="h-[150px] rounded-xl bg-gradient-to-b from-[#e7d3b6] to-[#c98d5c]"></div>
+        <div class="grid h-[150px] content-start gap-[7px] rounded-xl border border-[#e6e9e4] bg-[#f7f9f6] p-3.5"><span class="h-[7px] w-4/5 rounded bg-ink"></span><span class="h-[7px] rounded bg-[#d8ddd6]"></span><span class="h-[7px] w-[90%] rounded bg-[#d8ddd6]"></span><span class="h-[7px] w-[70%] rounded bg-[#d8ddd6]"></span></div>
+        <div class="flex h-[150px] items-center justify-center rounded-xl bg-gradient-to-b from-[#9db8c4] to-[#4e6f62]"><span class="inline-flex size-10 items-center justify-center rounded-full bg-white/90 text-ink"><%- include('../partials/icon', {n:'restore', s:16, w:2}) %></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATEMENT -->
+<section class="flex justify-center px-5 pt-10 pb-24 d:px-16 d:pt-20 d:pb-[120px]">
+  <p class="serif m-0 max-w-[1050px] text-center text-[34px] leading-[1.15] d:text-[54px]">
+    <% 'Your files sit in a *private* bucket. Nothing is public until you make a link, and anything you delete can be *restored*.'.split(' ').forEach(function (w) { %><span class="w"><% if (w.startsWith('*')) { %><i><%= w.replace(/\*/g, '') %></i><% } else { %><%= w %><% } %></span> <% }) %>
+  </p>
+</section>
+
+<!-- STEPS -->
+<section class="px-5 pb-24 d:px-16 d:pb-[120px]">
+  <div class="grid grid-cols-1 gap-10 d:grid-cols-3">
+    <% [['01','Create your account','Pick a username and password. No card, no trial clock.'],['02','Upload what matters','Up to ten files at a time, with progress you can follow.'],['03','Share on your terms','Send to a username or copy a link. Your call, every time.']].forEach(function (s) { %>
+    <div class="sv"><div class="ln h-px bg-ink"></div><div class="serif mt-[22px] text-[44px]"><%= s[0] %></div><h3 class="mt-3.5 mb-0 text-xl font-semibold"><%= s[1] %></h3><p class="mt-2 text-[15.5px] leading-relaxed text-muted"><%= s[2] %></p></div>
+    <% }) %>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section class="px-5 pb-24 d:px-16 d:pb-[130px]">
+  <div class="sv grid grid-cols-1 items-center gap-10 rounded-[28px] bg-mist p-7 d:grid-cols-[1fr_1.1fr] d:gap-[70px] d:p-16">
+    <div>
+      <span class="pill bg-white">Security</span>
+      <h2 class="serif mt-5 text-[44px] leading-[1.02] d:text-[60px]">Private by default, <i>not</i> by setting</h2>
+      <p class="mt-4 max-w-[420px] text-[16.5px] leading-relaxed text-muted">The protections are switched on for every account from the first upload.</p>
+    </div>
+    <div class="grid gap-3">
+      <% [['lock','Hashed passwords, short sessions','Access tokens expire quickly and sign-out clears them.'],['shield','Hardened headers on every page','Strict security headers block common browser attacks.'],['pulse','Rate limits on sign-in and uploads','Brute-force and flood attempts get slowed right down.'],['link','Private storage, shared on purpose','Files stay in a private bucket until you share them.']].forEach(function (r) { %>
+      <div class="flex items-center gap-3.5 rounded-2xl bg-white px-5 py-[18px]"><span class="inline-flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-sage text-forest-deep"><%- include('../partials/icon', {n:r[0], s:18}) %></span><div><div class="text-[15.5px] font-semibold"><%= r[1] %></div><div class="mt-0.5 text-sm text-muted"><%= r[2] %></div></div></div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<!-- PLAN + FAQ -->
+<section class="grid grid-cols-1 gap-12 px-5 pb-24 d:grid-cols-[1fr_1.2fr] d:gap-[70px] d:px-16 d:pb-[130px]">
+  <div class="card sv self-start p-8 d:p-10">
+    <div class="flex items-center justify-between"><span class="font-semibold">Free</span><span class="pill h-7 text-[12.5px]">Forever</span></div>
+    <div class="serif mt-4 text-[104px] leading-none">500<span class="text-4xl"> MB</span></div>
+    <p class="mt-1.5 text-[15.5px] text-muted">Room for the files that matter.</p>
+    <ul class="my-7 grid list-none gap-3 p-0 text-[15px]"><li>✓ Share by username or link</li><li>✓ Batch uploads with progress</li><li>✓ Recycle bin with restore</li></ul>
+    <a class="btn btn-dark w-full" href="/user/register">Create free account</a>
+  </div>
+  <div class="sv">
+    <h2 class="serif mb-6 text-[44px] leading-none d:text-[60px]">Questions, <i>answered</i></h2>
+    <div class="border-b border-line">
+      <% [['Where are my files stored?','In a private cloud bucket. Nothing is public unless you create a share link.'],['How much space do I get?','Every account starts with 500 MB, free.'],['Can I undo a delete?','Yes. Deleted files go to the recycle bin first, and you can restore them from there.'],['Do you look at my files?','No. No scanning, no ads, no training on your data.']].forEach(function (q, i) { %>
+      <details class="faq border-t border-line" <%= i === 0 ? 'open' : '' %>><summary><%= q[0] %><span class="pl text-[26px]" aria-hidden="true">+</span></summary><p class="mt-0 mb-6 max-w-[560px] text-[15.5px] leading-relaxed text-muted"><%= q[1] %></p></details>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="px-5 pb-24 d:px-10">
+  <div class="sky relative min-h-[520px] overflow-hidden rounded-[30px] text-center">
+    <div class="rise absolute inset-x-0 bottom-0 h-[360px]" aria-hidden="true"><%- include('../partials/landscape') %></div>
+    <div class="sv relative px-6 pt-[90px]">
+      <h2 class="serif m-0 text-[48px] leading-none d:text-[76px]">Give your files <i>some air</i></h2>
+      <p class="mt-4 mb-8 text-lg text-muted">Set up in under a minute. Free while you're here.</p>
+      <a class="btn btn-dark" href="/user/register">Start for free</a>
+    </div>
+  </div>
+</section>

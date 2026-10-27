@@ -1,48 +1,35 @@
-<header class="header">
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
-                    <a href="/dashboard" class="logo">
-                <% } else { %>
-                    <a href="/" class="logo">
-                <% } %>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                        <polyline points="13 2 13 9 20 9"></polyline>
-                    </svg>
-                    <span>MyDrive</span>
-                </a>
-            </div>
-            
-            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-
-            <div class="nav-menu" id="navMenu">
-                <ul class="nav-links">
-                    <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
-                        <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
-                        <li><a href="/files" class="nav-link">My Files</a></li>
-                        <li><a href="/profile" class="nav-link">Profile</a></li>
-                    <% } else { %>
-                        <li><a href="/" class="nav-link">Home</a></li>
-                        <li><a href="/about" class="nav-link">About</a></li>
-                        <li><a href="/features" class="nav-link">Features</a></li>
-                        <li><a href="/contact" class="nav-link">Contact</a></li>
-                    <% } %>
-                </ul>
-                <div class="nav-actions">
-                    <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
-                        <a href="/user/logout" class="btn btn-outline" id="logoutLink">Logout</a>
-                    <% } else if (typeof currentPage === 'undefined' || (currentPage !== 'login' && currentPage !== 'register')) { %>
-                        <a href="/user/login" class="btn btn-outline">Login</a>
-                        <a href="/user/register" class="btn btn-primary">Sign Up</a>
-                    <% } %>
-                </div>
-            </div>
-        </div>
-    </nav>
+<% const _li = typeof isLoggedIn !== 'undefined' && isLoggedIn; const _cp = typeof currentPage !== 'undefined' ? currentPage : ''; %>
+<header class="in relative z-40 font-sans text-ink">
+  <nav class="navbar relative flex h-[84px] items-center justify-between gap-6 px-5 d:px-16" aria-label="Main">
+    <%- include('logo') %>
+    <div class="flex items-center gap-1.5">
+      <div class="mr-3.5 hidden items-center gap-0.5 d:flex">
+        <a class="nav-link <%= _cp === 'home' ? 'text-ink' : '' %>" href="/">Home</a>
+        <a class="nav-link <%= _cp === 'features' ? 'text-ink' : '' %>" href="/features">Features</a>
+        <a class="nav-link <%= _cp === 'about' ? 'text-ink' : '' %>" href="/about">About</a>
+        <a class="nav-link <%= _cp === 'contact' ? 'text-ink' : '' %>" href="/contact">Contact</a>
+        <% if (!_li) { %><a class="nav-link" href="/user/login">Sign in</a><% } %>
+      </div>
+      <% if (_li) { %>
+        <a class="btn btn-dark btn-sm d:h-11 d:px-[22px] d:text-[15px]" href="/dashboard">Open dashboard</a>
+      <% } else { %>
+        <a class="btn btn-dark btn-sm d:h-11 d:px-[22px] d:text-[15px]" href="/user/register">Get started</a>
+      <% } %>
+      <button id="mobileMenuToggle" type="button" class="inline-flex size-11 items-center justify-center rounded-full border border-[#dfe3dd] bg-white d:hidden" aria-label="Open menu" aria-controls="navMenu">
+        <%- include('icon', {n:'menu', s:18}) %>
+      </button>
+    </div>
+    <div id="navMenu" class="absolute top-[74px] right-5 z-50 hidden w-60 flex-col rounded-[18px] border border-line bg-white p-2 shadow-[0_24px_50px_-24px_rgba(23,27,24,.35)] d:!hidden">
+      <a class="nav-link rounded-xl py-3 text-base" href="/">Home</a>
+      <a class="nav-link rounded-xl py-3 text-base" href="/features">Features</a>
+      <a class="nav-link rounded-xl py-3 text-base" href="/about">About</a>
+      <a class="nav-link rounded-xl py-3 text-base" href="/contact">Contact</a>
+      <% if (_li) { %>
+        <a class="nav-link rounded-xl py-3 text-base" href="/dashboard">Dashboard</a>
+        <a class="nav-link rounded-xl py-3 text-base" href="/user/logout" data-logout>Sign out</a>
+      <% } else { %>
+        <a class="nav-link rounded-xl py-3 text-base" href="/user/login">Sign in</a>
+      <% } %>
+    </div>
+  </nav>
 </header>

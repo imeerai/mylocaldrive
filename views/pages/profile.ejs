@@ -1,65 +1,83 @@
-<%- layout('layouts/main') %>
+<% layout('layouts/app') %>
+<% block('nav', 'profile') %>
+<%
+  const full = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+  const initials = (full ? full.split(/\s+/).map(p => p[0]).join('') : (user.username || 'U')).slice(0, 2).toUpperCase();
+  const bytes = typeof storageBytes !== 'undefined' ? Number(storageBytes) || 0 : 0;
+  const usedMB = bytes / 1048576;
+  const pct = Math.min(100, (usedMB / 500) * 100);
+  const since = new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+%>
 
-<section style="min-height: calc(100vh - 100px); padding: 3rem 1rem;">
-	<div style="max-width: 600px; margin: 0 auto;">
-		<!-- Header -->
-		<div style="margin-bottom: 2rem;">
-			<a href="/dashboard" style="color: var(--primary-color); text-decoration: none; font-size: 0.875rem;">← Back to Dashboard</a>
-			<h1 style="font-size: 2.5rem; margin: 1rem 0 0.5rem 0;">Profile Settings</h1>
-			<p style="color: var(--text-light);">Manage your account and personal information</p>
-
-			<% if (typeof success !== 'undefined' && success) { %>
-				<div style="margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; border-radius: 8px; font-size: 0.95rem;">
-					<i class="fas fa-check-circle"></i> <%= success %>
-				</div>
-			<% } %>
-			<% if (typeof error !== 'undefined' && error) { %>
-				<div style="margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; border-radius: 8px; font-size: 0.95rem;">
-					<i class="fas fa-exclamation-triangle"></i> <%= error %>
-				</div>
-			<% } %>
-		</div>
-
-		<!-- Profile Card -->
-		<div style="background: var(--white); padding: 2rem; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 2rem;">
-			<div style="text-align: center; margin-bottom: 2rem;">
-				<div style="width: 80px; height: 80px; background: var(--primary-color); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white;">
-					<i class="fas fa-user-circle"></i>
-				</div>
-				<p style="margin: 0; color: var(--text-light); font-size: 0.875rem;">Username: <span style="color: var(--text-dark);"><%= user.username %></span></p>
-			</div>
-
-			<!-- Profile Info -->
-			<div style="margin-bottom: 1.5rem;">
-				<label style="display: block; color: var(--text-light); font-size: 0.875rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Email</label>
-				<div style="background: rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">
-					<p style="margin: 0; color: var(--text-dark);"><%= user.email %></p>
-				</div>
-			</div>
-
-			<div style="margin-bottom: 1.5rem;">
-				<label style="display: block; color: var(--text-light); font-size: 0.875rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Account Created</label>
-				<div style="background: rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 8px;">
-					<p style="margin: 0; color: var(--text-dark);"><%= new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></p>
-				</div>
-			</div>
-		</div>
-
-		<!-- Account Actions -->
-		<div style="background: var(--white); padding: 2rem; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 2rem;">
-			<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: var(--text-dark);">Account Actions</h3>
-			
-			<div style="margin-bottom: 1rem;">
-				<a href="/profile/change-password" class="btn" style="display: block; text-align: center; background: var(--primary-color); color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; border: none; cursor: pointer;">
-					<i class="fas fa-shield-alt"></i> Security Settings
-				</a>
-			</div>
-		</div>
-
-		<!-- Danger Zone -->
-		<div style="background: rgba(239, 68, 68, 0.1); padding: 2rem; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.3);">
-			<h3 style="margin-top: 0; margin-bottom: 1rem; color: #ef4444;">Danger Zone</h3>
-			<p style="color: var(--text-light); font-size: 0.875rem; margin-bottom: 1.5rem;">Account deletion and security settings are available in Security Settings.</p>
-		</div>
-	</div>
+<section class="in flex flex-col gap-5 d:flex-row d:items-center" style="--d:.05s">
+  <span class="inline-flex size-20 shrink-0 items-center justify-center rounded-full bg-sage font-serif text-[34px] text-forest-deep d:size-24 d:text-[40px]"><%= initials %></span>
+  <div class="min-w-0">
+    <h1 class="serif m-0 truncate text-[44px] leading-none d:text-[60px]"><%= full || user.username %></h1>
+    <p class="mt-2 mb-0 text-muted">@<%= user.username %> · <%= user.email %> · Member since <%= since %></p>
+  </div>
 </section>
+
+
+<div class="mt-8 grid grid-cols-1 gap-4 d:grid-cols-2">
+  <section class="card in p-6 d:p-7" style="--d:.1s" aria-labelledby="nameTitle">
+    <h2 id="nameTitle" class="m-0 text-lg font-semibold">Your name</h2>
+    <p class="mt-1 mb-5 text-sm text-muted">Shown on your dashboard and to people you share with.</p>
+    <form method="POST" action="/profile/edit-name" class="grid gap-4">
+      <div class="grid grid-cols-1 gap-4 d:grid-cols-2">
+        <div><label for="firstName" class="field-label">First name</label><input id="firstName" type="text" name="firstName" class="field" value="<%= user.firstName || '' %>" required maxlength="50" pattern="[A-Za-z\s'.\-]+" autocomplete="given-name"></div>
+        <div><label for="lastName" class="field-label">Last name</label><input id="lastName" type="text" name="lastName" class="field" value="<%= user.lastName || '' %>" required maxlength="50" pattern="[A-Za-z\s'.\-]+" autocomplete="family-name"></div>
+      </div>
+      <div><button type="submit" class="btn btn-dark btn-sm h-11">Save name</button></div>
+    </form>
+  </section>
+
+  <section class="card in p-6 d:p-7" style="--d:.15s" aria-labelledby="storageTitle">
+    <h2 id="storageTitle" class="m-0 text-lg font-semibold">Storage</h2>
+    <div class="mt-5 flex items-center gap-6">
+      <svg width="110" height="110" viewBox="0 0 120 120" class="shrink-0" aria-hidden="true"><circle cx="60" cy="60" r="48" fill="none" stroke="#eef0ec" stroke-width="12"/><circle cx="60" cy="60" r="48" fill="none" stroke="#3f7d5a" stroke-width="12" stroke-linecap="round" stroke-dasharray="302" stroke-dashoffset="<%= (302 - (302 * pct) / 100).toFixed(1) %>" transform="rotate(-90 60 60)"/><text x="60" y="68" text-anchor="middle" font-family="Instrument Serif, serif" font-size="28" fill="#171b18"><%= Math.round(pct) %>%</text></svg>
+      <div>
+        <div class="text-[28px] font-semibold tracking-[-.5px]"><%= usedMB.toFixed(1) %> <span class="text-sm font-medium text-faint">of 500 MB</span></div>
+        <div class="mt-1 text-sm text-muted"><%= typeof fileCount !== 'undefined' ? fileCount : 0 %> files stored · <%= Math.max(0, 500 - usedMB).toFixed(1) %> MB free</div>
+        <a href="/files" class="mt-3 inline-block text-sm text-ink underline decoration-line underline-offset-4 hover:decoration-ink">Manage files</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card in p-6 d:p-7" style="--d:.2s" aria-labelledby="secTitle">
+    <h2 id="secTitle" class="m-0 text-lg font-semibold">Security</h2>
+    <div class="mt-4 grid gap-2">
+      <a href="/profile/change-password" class="flex items-center gap-3.5 rounded-2xl bg-mist px-4 py-3.5 text-ink no-underline transition hover:-translate-y-0.5"><span class="inline-flex size-9 items-center justify-center rounded-xl bg-white text-forest-deep"><%- include('../partials/icon', {n:'lock', s:17}) %></span><span class="flex-1"><span class="block text-[15px] font-medium">Change password</span><span class="block text-sm text-muted">Use upper and lower case letters and a number.</span></span><%- include('../partials/icon', {n:'arrow', s:16}) %></a>
+      <a href="/user/logout" data-logout class="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-ink no-underline transition hover:bg-mist"><span class="inline-flex size-9 items-center justify-center rounded-xl bg-[#f2f4f1]"><%- include('../partials/icon', {n:'logout', s:17}) %></span><span class="flex-1"><span class="block text-[15px] font-medium">Sign out</span><span class="block text-sm text-muted">End this session on this device.</span></span></a>
+    </div>
+  </section>
+
+  <section class="card in border-rust/25 p-6 d:p-7" style="--d:.25s" aria-labelledby="dangerTitle">
+    <h2 id="dangerTitle" class="m-0 text-lg font-semibold text-rust">Delete account</h2>
+    <p class="mt-1 mb-5 text-sm leading-relaxed text-muted">Removes your account and every file you stored. This cannot be undone.</p>
+    <button type="button" id="deleteAccountBtn" class="btn btn-danger btn-sm h-11"><%- include('../partials/icon', {n:'trash', s:15}) %>Delete my account</button>
+  </section>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('deleteAccountBtn');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const ok = await showConfirm('Delete your account? All your files and account data will be removed. This cannot be undone.');
+      if (!ok) return;
+      try {
+        const res = await fetch('/profile/delete-account', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await res.json();
+        if (data.success) {
+          try { localStorage.setItem('mydrive-auth-state', JSON.stringify({ loggedIn: false, ts: Date.now() })); } catch (e) {}
+          showSuccess('Account deleted. Redirecting…');
+          setTimeout(() => { window.location.href = '/user/logout'; }, 1500);
+        } else {
+          showError(data.error || 'Failed to delete account');
+        }
+      } catch (err) {
+        showError('Failed to delete account');
+      }
+    });
+  });
+</script>

@@ -50,7 +50,7 @@ async function getFiles(req, res, next) {
 		const totalPages = Math.ceil(totalFiles / pageLimit);
 
 		res.render('pages/files', {
-			title: 'My Files',
+			title: 'My files · MyDrive',
 			files,
 			trashedFiles,
 			storageUsed,

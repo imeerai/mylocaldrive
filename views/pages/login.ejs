@@ -1,81 +1,40 @@
-<% layout('layouts/main') %>
+<% layout('layouts/auth') %>
+<main class="grid min-h-screen grid-cols-1 gap-4 p-3 d:grid-cols-2 d:p-4">
+  <div class="flex flex-col px-3 py-5 d:px-14 d:py-8">
+    <%- include('../partials/logo') %>
+    <div class="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center py-12">
+      <h1 class="serif in m-0 text-[52px] leading-none d:text-[64px]" style="--d:.1s">Welcome <i>back</i></h1>
+      <p class="in mt-3 text-muted" style="--d:.2s">Sign in to continue to MyDrive.</p>
 
-<div class="auth-container">
-    <div class="auth-card">
-        <h2 class="auth-title">Welcome Back</h2>
-        <p class="auth-subtitle">Sign in to continue to MyDrive</p>
+      <% if (typeof success !== 'undefined' && success) { %>
+        <div class="in mt-6 flex items-center gap-2.5 rounded-2xl bg-mist px-4 py-3 text-sm text-forest-deep" role="status"><%- include('../partials/icon', {n:'check', s:16, w:2.2}) %><%= success %></div>
+      <% } %>
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="in mt-6 flex items-center gap-2.5 rounded-2xl bg-rust-soft px-4 py-3 text-sm text-rust" role="alert"><%- include('../partials/icon', {n:'info', s:16, w:2}) %><%= error %></div>
+      <% } %>
 
-        <% if (typeof error !== 'undefined' && error) { %>
-            <div class="error-alert">
-                <p><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> <%= error %></p>
-            </div>
-        <% } %>
-
-        <form id="loginForm" class="auth-form" action="/user/login" method="POST">
-            <div class="form-group">
-                <label for="username" class="form-label">Username</label>
-                <input 
-                    type="text" 
-                    id="username" 
-                    name="username" 
-                    class="form-input"
-                    placeholder="Username"
-                    required
-                >
-                <span class="error-message" id="usernameError"></span>
-            </div>
-
-            <div class="form-group">
-                <label for="password" class="form-label">Password</label>
-                <div style="position: relative; display: inline-block; width: 100%;">
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        class="form-input"
-                        placeholder="Password"
-                        required
-                        style="width: 100%; padding-right: 2.5rem;"
-                    >
-                    <i class="fas fa-eye toggle-password" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #9ca3af; z-index: 10;"></i>
-                </div>
-                <span class="error-message" id="passwordError"></span>
-            </div>
-
-            <div style="display: flex; justify-content: flex-start; align-items: center;">
-                <div class="auth-checkbox-group">
-                    <input type="checkbox" id="remember" name="remember" />
-                    <label for="remember">Remember me</label>
-                </div>
-            </div>
-
-            <button type="submit" class="btn-primary btn-full">
-                Login
-            </button>
-        </form>
-
-        <div class="auth-footer">
-            <p>New to MyDrive? <a href="/user/register" class="auth-link">Create an account</a></p>
+      <form id="loginForm" class="in mt-8 grid gap-5" style="--d:.3s" action="/user/login" method="POST" novalidate>
+        <div>
+          <label for="username" class="field-label">Username</label>
+          <input type="text" id="username" name="username" class="field" placeholder="your_username" autocomplete="username" autocapitalize="none" required>
+          <span class="error-message field-error" id="usernameError"></span>
         </div>
+        <div>
+          <label for="password" class="field-label">Password</label>
+          <div class="relative">
+            <input type="password" id="password" name="password" class="field pr-12" placeholder="Your password" autocomplete="current-password" required>
+            <button type="button" class="icon-btn absolute top-1 right-1" data-toggle-password="password" aria-label="Show password" aria-pressed="false"><%- include('../partials/icon', {n:'eye', s:18}) %></button>
+          </div>
+          <span class="error-message field-error" id="passwordError"></span>
+        </div>
+        <label class="flex cursor-pointer items-center gap-2.5 text-sm text-muted"><input type="checkbox" id="remember" name="remember" class="size-4 accent-ink"> Remember me</label>
+        <button type="submit" class="btn btn-dark w-full">Sign in</button>
+      </form>
+      <p class="in mt-7 text-center text-sm text-muted" style="--d:.4s">New to MyDrive? <a href="/user/register" class="font-medium text-ink underline decoration-line underline-offset-4 hover:decoration-ink">Create an account</a></p>
     </div>
-</div>
-
+    <p class="text-xs text-faint">&copy; <%= new Date().getFullYear() %> MyDrive</p>
+  </div>
+  <%- include('../partials/auth-scene', { tagline: 'Your files, <i>right where</i> you left them.', cards: [['final-thesis.pdf','100%','bg-sage text-forest-deep','check'],['trip-photo.jpg','72%','bg-amber-soft text-amber','image'],['backup.zip','38%','bg-slate-soft text-slate','folder']] }) %>
+</main>
 <script src="/js/validation.js"></script>
 <script src="/js/login.js"></script>
-<script>
-// Password visibility toggle
-document.querySelectorAll('.toggle-password').forEach(icon => {
-    icon.addEventListener('click', function() {
-        const input = this.previousElementSibling;
-        if (input.type === 'password') {
-            input.type = 'text';
-            this.classList.remove('fa-eye');
-            this.classList.add('fa-eye-slash');
-        } else {
-            input.type = 'password';
-            this.classList.remove('fa-eye-slash');
-            this.classList.add('fa-eye');
-        }
-    });
-});
-</script>

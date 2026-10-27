@@ -1,7 +1,7 @@
 {
   "name": "mydrive",
   "version": "1.0.0",
-  "description": "Generated using **IMEER.ai **",
+  "description": "MyDrive \u2014 a calm, private cloud drive",
   "keywords": [],
   "homepage": "https://github.com/imeerai/mylocaldrive#readme",
   "bugs": {
@@ -17,7 +17,10 @@
   "main": "app.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "build:css": "tailwindcss -i ./src/styles.css -o ./public/css/app.css --minify",
+    "watch:css": "tailwindcss -i ./src/styles.css -o ./public/css/app.css --watch",
+    "build": "npm run build:css"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.970.0",
@@ -38,6 +41,8 @@
     "nodemailer": "^7.0.12"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@tailwindcss/cli": "^4.3.3",
+    "nodemon": "^3.1.14",
+    "tailwindcss": "^4.3.3"
   }
 }

@@ -1,54 +1,40 @@
+<% const code = typeof status !== 'undefined' && status ? status : 500; const is404 = Number(code) === 404; const li = typeof isLoggedIn !== 'undefined' && isLoggedIn; %>
 <!doctype html>
-<html style="height: 100%;">
+<html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><%= title || 'My Drive' %></title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'><path d='M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z'/><polyline points='13 2 13 9 20 9'/></svg>">
-    <link rel="stylesheet" href="/css/style.css">
+    <%- include('../partials/head') %>
   </head>
+  <body class="overflow-x-clip">
+    <main class="sky relative flex min-h-screen flex-col overflow-hidden">
+      <div class="cloud top-[22%] left-[4%] h-[110px] w-[460px] opacity-90" aria-hidden="true"></div>
+      <div class="cloud top-[16%] right-[5%] h-[100px] w-[400px] opacity-80 [animation-duration:30s]" aria-hidden="true"></div>
+      <div class="absolute inset-x-0 bottom-0 h-[42vh] min-h-[260px]" aria-hidden="true"><%- include('../partials/landscape') %></div>
 
-  <body>
-    <main class="error-page">
-      <div class="container error-container">
-        <section class="card card-danger error-card">
-          <div class="error-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-          </div>
-          <p class="eyebrow">Error <%= status || 500 %></p>
-          <h1 class="heading-lg"><%= message || 'Something went wrong' %></h1>
-          <p class="error-subtitle text-muted">We hit a problem while handling your request.</p>
+      <div class="relative px-5 py-6 d:px-16"><%- include('../partials/logo') %></div>
 
-          <div class="error-details panel panel-soft-danger">
-            <h3>Details</h3>
-            <p><%= typeof details !== 'undefined' ? details : 'An unexpected error occurred. Please try again.' %></p>
-          </div>
+      <div class="relative flex flex-1 flex-col items-center px-5 pt-[6vh] pb-[38vh] text-center">
+        <div class="in flex items-center gap-4 d:gap-8" style="--d:.1s">
+          <span class="serif text-[120px] leading-none d:text-[200px]"><%= String(code).slice(0, 1) %><i class="text-forest"><%= String(code).slice(1, 2) %></i><%= String(code).slice(2) %></span>
+          <svg class="floaty hidden d:block" width="120" height="110" viewBox="0 0 120 110" aria-hidden="true"><ellipse cx="60" cy="104" rx="36" ry="5" fill="#171b18" opacity=".08"/><rect x="34" y="12" width="46" height="58" rx="5" fill="#fff" stroke="#171b18" stroke-width="2.5" transform="rotate(-10 57 41)"/><path d="M10 36a6 6 0 0 1 6-6h26l8 9h52a6 6 0 0 1 6 6v40a6 6 0 0 1-6 6H16a6 6 0 0 1-6-6z" fill="#dfeee4" stroke="#171b18" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        </div>
+        <h1 class="serif in mt-3 mb-0 text-[40px] leading-none d:text-[60px]" style="--d:.2s"><%- is404 ? 'This page <i>wandered off</i>' : 'Something went <i>sideways</i>' %></h1>
+        <p class="in mt-4 max-w-[480px] text-[17px] leading-relaxed text-muted" style="--d:.3s"><%= typeof message !== 'undefined' && message ? message : 'Something went wrong. Please try again.' %></p>
 
-          <% if (typeof errors !== 'undefined' && errors && errors.length > 0) { %>
-            <div class="error-list panel panel-danger">
-              <h3>Validation</h3>
-              <ul>
-                <% errors.forEach(error => { %>
-                  <li>
-                    <strong><%= error.param || 'Field' %></strong>
-                    <span><%= error.msg %></span>
-                  </li>
-                <% }); %>
-              </ul>
-            </div>
-          <% } %>
+        <% if (typeof details !== 'undefined' && details) { %>
+          <p class="in mt-2 max-w-[480px] text-sm text-faint" style="--d:.35s"><%= details %></p>
+        <% } %>
+        <% if (typeof errors !== 'undefined' && errors && errors.length) { %>
+          <ul class="in mt-5 grid w-full max-w-[460px] list-none gap-2 p-0 text-left text-sm" style="--d:.4s">
+            <% errors.forEach(function (e) { %><li class="rounded-xl border border-line bg-white/80 px-4 py-2.5"><b class="font-semibold"><%= e.param || e.path || 'Field' %></b> <span class="text-muted"><%= e.msg %></span></li><% }) %>
+          </ul>
+        <% } %>
 
-          <div class="error-actions">
-            <a href="/" class="btn btn-primary">Go Home</a>
-            <a href="javascript:history.back()" class="btn btn-outline">Try Previous Page</a>
-          </div>
-        </section>
+        <div class="in mt-8 flex flex-wrap justify-center gap-3" style="--d:.45s">
+          <a class="btn btn-dark" href="/">Back home</a>
+          <% if (li) { %><a class="btn btn-light" href="/dashboard">Open dashboard</a><% } else { %><a class="btn btn-light" href="javascript:history.back()">Go back</a><% } %>
+        </div>
+        <span class="in mt-6 inline-flex items-center gap-2 rounded-full border border-line bg-white/80 px-3 py-1.5 text-xs text-muted" style="--d:.55s"><span class="size-1.5 rounded-full bg-amber"></span>Error <%= code %></span>
       </div>
     </main>
-    <script src="/js/main.js"></script>
   </body>
 </html>

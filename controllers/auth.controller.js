@@ -39,7 +39,7 @@ const getRegister = (req, res) => {
 
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   res.render('pages/register', {
-    title: 'User Registration',
+    title: 'Create account · MyDrive',
     currentPage: 'register',
     error: req.query.error || null,
   });
@@ -100,7 +100,7 @@ const getLogin = (req, res) => {
 
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   res.render('pages/login', {
-    title: 'User Login',
+    title: 'Sign in · MyDrive',
     currentPage: 'login',
     error: req.query.error || null,
   });

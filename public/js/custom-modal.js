@@ -8,32 +8,27 @@
 		
 		const modalHTML = `
 			<!-- Error/Success Modal -->
-			<div id="customModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; height: 100vh;">
-				<div id="modalContent" style="background: #111827; padding: 2rem; border-radius: 12px; max-width: 450px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.55);">
-					<div style="display: flex; align-items: flex-start; gap: 1rem;">
-						<i id="modalIcon" class="fas fa-exclamation-circle" style="font-size: 1.5rem; margin-top: 0.2rem; flex-shrink: 0;"></i>
-						<div style="flex: 1;">
-							<h3 id="modalTitle" style="margin: 0 0 0.75rem 0; color: var(--text-dark); font-size: 1.1rem;">Error</h3>
-							<p id="modalMessage" style="margin: 0 0 1.5rem 0; color: var(--text-light); line-height: 1.5; font-size: 0.95rem;"></p>
-							<button id="modalOkBtn" class="btn btn-primary" style="padding: 0.7rem 1.5rem; border: none; cursor: pointer;">OK</button>
+			<div id="customModal" class="modal z-[9999]" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+				<div id="modalContent" class="modal-panel max-w-[440px]">
+					<div class="flex items-start gap-4">
+						<i id="modalIcon" class="fas fa-exclamation-circle mt-1 shrink-0 text-xl"></i>
+						<div class="flex-1">
+							<h3 id="modalTitle" class="serif m-0 text-[30px] leading-none">Error</h3>
+							<p id="modalMessage" class="mt-3 mb-6 leading-relaxed text-muted"></p>
+							<button type="button" id="modalOkBtn" class="btn btn-dark btn-sm">OK</button>
 						</div>
 					</div>
 				</div>
 			</div>
 
 			<!-- Confirmation Modal -->
-			<div id="customConfirmModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; height: 100vh;">
-				<div style="background: #111827; padding: 2rem; border-radius: 12px; max-width: 450px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.55); border-left: 4px solid #f59e0b;">
-					<div style="display: flex; align-items: flex-start; gap: 1rem;">
-						<i class="fas fa-question-circle" style="font-size: 1.5rem; color: #f59e0b; margin-top: 0.2rem; flex-shrink: 0;"></i>
-						<div style="flex: 1;">
-							<h3 style="margin: 0 0 0.75rem 0; color: var(--text-dark); font-size: 1.1rem;">Confirmation Required</h3>
-							<p id="confirmMessage" style="margin: 0 0 1.5rem 0; color: var(--text-light); line-height: 1.5; font-size: 0.95rem;"></p>
-							<div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-								<button id="confirmCancelBtn" class="btn" style="padding: 0.7rem 1.4rem; background: var(--gray-700); border: none; color: white; border-radius: 8px; cursor: pointer;">Cancel</button>
-								<button id="confirmOkBtn" class="btn btn-primary" style="padding: 0.7rem 1.4rem;">OK</button>
-							</div>
-						</div>
+			<div id="customConfirmModal" class="modal z-[9999]" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="customConfirmTitle">
+				<div class="modal-panel max-w-[440px]">
+					<h3 id="customConfirmTitle" class="serif m-0 text-[30px] leading-none">Are you <i>sure?</i></h3>
+					<p id="confirmMessage" class="mt-3 mb-6 leading-relaxed text-muted"></p>
+					<div class="flex flex-wrap justify-end gap-2.5">
+						<button type="button" id="confirmCancelBtn" class="btn btn-light btn-sm">Cancel</button>
+						<button type="button" id="confirmOkBtn" class="btn btn-dark btn-sm">OK</button>
 					</div>
 				</div>
 			</div>
@@ -56,10 +51,9 @@
 		const title = document.getElementById('modalTitle');
 		const messageEl = document.getElementById('modalMessage');
 		
-		if (content) content.style.borderLeft = '4px solid #ef4444';
-		if (icon) {
+				if (icon) {
 			icon.className = 'fas fa-exclamation-circle';
-			icon.style.color = '#ef4444';
+			icon.style.color = '#a4472f';
 		}
 		if (title) title.textContent = 'Error';
 		if (messageEl) messageEl.textContent = message;
@@ -75,10 +69,9 @@
 		const title = document.getElementById('modalTitle');
 		const messageEl = document.getElementById('modalMessage');
 		
-		if (content) content.style.borderLeft = '4px solid #10b981';
-		if (icon) {
+				if (icon) {
 			icon.className = 'fas fa-check-circle';
-			icon.style.color = '#10b981';
+			icon.style.color = '#3f7d5a';
 		}
 		if (title) title.textContent = 'Success';
 		if (messageEl) messageEl.textContent = message;

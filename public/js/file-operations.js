@@ -65,21 +65,21 @@
 		}
 
 		fileListContainer.style.display = 'block';
-		uploadBtn.style.display = 'block';
+		uploadBtn.style.display = 'inline-flex';
 		
 		// Update file count
 		const fileCountEl = document.getElementById('fileCount');
 		if (fileCountEl) fileCountEl.textContent = selectedFiles.length;
 		
 		fileList.innerHTML = selectedFiles.map((file, index) => (
-			`<div style="padding: 0.75rem 1rem; color: var(--text-light); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+			`<div style="padding: 0.75rem 1rem; color: var(--text-dark); border-bottom: 1px solid #eef0ec; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
 				<div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; overflow: hidden;">
 					<i class="fas fa-file" style="color: var(--primary-color); flex-shrink: 0;"></i>
 					<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-size: 0.875rem;" title="${file.name}">${file.name}</span>
 				</div>
 				<div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;">
 					<span style="font-size: 0.75rem; color: var(--gray-400); white-space: nowrap;">${formatSize(file.size)}</span>
-					<button class="file-remove-btn" data-file-index="${index}" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.25rem; font-size: 0.875rem; transition: transform 0.2s;" title="Remove">
+					<button class="file-remove-btn" data-file-index="${index}" style="background: none; border: none; color: #a4472f; cursor: pointer; padding: 0.25rem; font-size: 0.875rem; transition: transform 0.2s;" title="Remove">
 						<i class="fas fa-times-circle"></i>
 					</button>
 				</div>
@@ -261,7 +261,7 @@
 		
 		if (uploadFilesList) {
 			uploadFilesList.innerHTML = selectedFiles.map((file, index) => `
-				<div id="uploadFile_${index}" style="padding: 0.72rem 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.08); transition: opacity 0.25s; background: rgba(0,0,0,0.12);">
+				<div id="uploadFile_${index}" style="padding: 0.72rem 0.9rem; border-bottom: 1px solid #eef0ec; transition: opacity 0.25s; background: #fff;">
 					<div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
 						<div style="display: flex; align-items: center; gap: 0.62rem; min-width: 0; flex: 1;">
 							<i class="fas fa-file-alt" style="color: var(--primary-color); font-size: 0.9rem; flex-shrink: 0;"></i>
@@ -272,13 +272,13 @@
 						</div>
 						<div style="display: flex; align-items: center; gap: 0.45rem; flex-shrink: 0;">
 							<span id="fileStatus_${index}" style="font-size: 0.9rem; color: var(--text-light); white-space: nowrap;"><i class="fas fa-hourglass-half" style="opacity: 0.85;"></i></span>
-							<button class="cancel-file-btn" data-file-index="${index}" style="display: none; background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.2rem; font-size: 1rem; opacity: 0.8; transition: all 0.2s;" title="Cancel this file">
+							<button class="cancel-file-btn" data-file-index="${index}" style="display: none; background: none; border: none; color: #a4472f; cursor: pointer; padding: 0.2rem; font-size: 1rem; opacity: 0.8; transition: all 0.2s;" title="Cancel this file">
 								<i class="fas fa-times-circle"></i>
 							</button>
 						</div>
 					</div>
-					<div id="fileProgressWrap_${index}" style="background: rgba(129, 140, 248, 0.15); height: 3px; border-radius: 999px; overflow: hidden; max-height: 3px; margin-top: 0.45rem;">
-						<div id="fileProgress_${index}" style="background: linear-gradient(90deg, var(--primary-color), var(--primary-dark)); height: 100%; width: 0%; transition: width 0.25s ease;"></div>
+					<div id="fileProgressWrap_${index}" style="background: #eef0ec; height: 3px; border-radius: 999px; overflow: hidden; max-height: 3px; margin-top: 0.45rem;">
+						<div id="fileProgress_${index}" style="background: var(--primary-color); height: 100%; width: 0%; transition: width 0.25s ease;"></div>
 					</div>
 				</div>
 			`).join('');
@@ -386,7 +386,7 @@
 				});
 
 				if (cancelledFiles.has(index)) {
-					if (statusEl) statusEl.innerHTML = '<i class="fas fa-ban" style="color: #ef4444;"></i> Cancelled';
+					if (statusEl) statusEl.innerHTML = '<i class="fas fa-ban" style="color: #a4472f;"></i> Cancelled';
 					if (progressEl) progressEl.style.width = '0%';
 					updateSummary();
 					continue;
@@ -397,14 +397,14 @@
 					currentSpeedBps = 0;
 					currentEtaSeconds = 0;
 					if (progressEl) progressEl.style.width = '100%';
-					if (statusEl) statusEl.innerHTML = '<i class="fas fa-check-circle" style="color: #10b981;"></i>';
+					if (statusEl) statusEl.innerHTML = '<i class="fas fa-check-circle" style="color: #3f7d5a;"></i>';
 					if (subStatusEl) subStatusEl.textContent = 'Uploaded';
 					finalizeUploadRow(index, 'completed');
 				} else {
 					failedCount += 1;
 					currentSpeedBps = 0;
 					currentEtaSeconds = 0;
-					if (statusEl) statusEl.innerHTML = '<i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>';
+					if (statusEl) statusEl.innerHTML = '<i class="fas fa-exclamation-circle" style="color: #a4472f;"></i>';
 					if (subStatusEl) subStatusEl.textContent = 'Failed';
 					finalizeUploadRow(index, 'failed');
 				}
@@ -414,7 +414,7 @@
 					if (cancelAllRequested || cancelledFiles.has(index)) {
 						currentSpeedBps = 0;
 						currentEtaSeconds = 0;
-						if (statusEl) statusEl.innerHTML = '<i class="fas fa-ban" style="color: #ef4444;"></i>';
+						if (statusEl) statusEl.innerHTML = '<i class="fas fa-ban" style="color: #a4472f;"></i>';
 						if (subStatusEl) subStatusEl.textContent = 'Cancelled';
 						if (progressEl) progressEl.style.width = '0%';
 						finalizeUploadRow(index, 'cancelled');
@@ -425,7 +425,7 @@
 				failedCount += 1;
 				currentSpeedBps = 0;
 				currentEtaSeconds = 0;
-				if (statusEl) statusEl.innerHTML = '<i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>';
+				if (statusEl) statusEl.innerHTML = '<i class="fas fa-exclamation-circle" style="color: #a4472f;"></i>';
 				if (subStatusEl) subStatusEl.textContent = 'Failed';
 				finalizeUploadRow(index, 'failed');
 				updateSummary();
@@ -568,7 +568,7 @@
 			fileEl.style.opacity = '0.5';
 		}
 		if (statusEl) {
-			statusEl.innerHTML = '<i class="fas fa-ban" style="color: #ef4444;"></i>';
+			statusEl.innerHTML = '<i class="fas fa-ban" style="color: #a4472f;"></i>';
 		}
 		const subStatusEl = document.getElementById(`fileSubStatus_${index}`);
 		if (subStatusEl) {
@@ -624,19 +624,19 @@
 	if (dropZone) {
 		dropZone.addEventListener('dragover', (e) => {
 			e.preventDefault();
-			dropZone.style.background = 'rgba(129, 140, 248, 0.15)';
-			dropZone.style.borderColor = '#06b6d4';
+			dropZone.style.background = '#eef3ef';
+			dropZone.style.borderColor = '#3f7d5a';
 		});
 
 		dropZone.addEventListener('dragleave', () => {
-			dropZone.style.background = 'rgba(129, 140, 248, 0.07)';
-			dropZone.style.borderColor = 'var(--primary-color)';
+			dropZone.style.background = '';
+			dropZone.style.borderColor = '';
 		});
 
 		dropZone.addEventListener('drop', (e) => {
 			e.preventDefault();
-			dropZone.style.background = 'rgba(129, 140, 248, 0.07)';
-			dropZone.style.borderColor = 'var(--primary-color)';
+			dropZone.style.background = '';
+			dropZone.style.borderColor = '';
 			selectedFiles = Array.from(e.dataTransfer.files || []);
 			updateFileList();
 		});

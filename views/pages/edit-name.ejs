@@ -1,36 +1,13 @@
-<%- layout('layouts/main') %>
+<% layout('layouts/app') %>
+<% block('nav', 'profile') %>
 
-<section style="min-height: calc(100vh - 100px); padding: 3rem 1rem;">
-	<div style="max-width: 600px; margin: 0 auto;">
-		<a href="/profile" style="color: var(--primary-color); text-decoration: none; font-size: 0.875rem;">← Back to Profile</a>
-		<h1 style="font-size: 2rem; margin: 1rem 0 0.5rem 0;">Edit Profile Name</h1>
+<nav class="in text-sm text-faint" style="--d:.05s" aria-label="Breadcrumb"><a href="/profile" class="text-faint no-underline hover:text-ink">Profile</a> <span aria-hidden="true">/</span> <span class="text-ink">Edit name</span></nav>
+<h1 class="serif in mt-2 mb-0 text-[44px] leading-none d:text-[64px]" style="--d:.1s">Edit <i>name</i></h1>
 
-		<% if (error) { %>
-			<div style="margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; border-radius: 8px; font-size: 0.95rem;">
-				<i class="fas fa-exclamation-triangle"></i> <%= error %>
-			</div>
-		<% } %>
-		<% if (success) { %>
-			<div style="margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; border-radius: 8px; font-size: 0.95rem;">
-				<i class="fas fa-check-circle"></i> <%= success %>
-			</div>
-		<% } %>
-
-		<form method="POST" action="/profile/edit-name" style="background: var(--white); padding: 2rem; border-radius: 12px; box-shadow: var(--shadow); margin-top: 2rem;">
-			<div style="margin-bottom: 1.5rem;">
-				<label style="display: block; color: var(--text-light); font-size: 0.875rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">First Name</label>
-				<input type="text" name="firstName" value="<%= user?.firstName || '' %>" required minlength="1" maxlength="50" pattern="[A-Za-z\s'.-]+" style="width: 100%; padding: 0.75rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(0,0,0,0.2); color: var(--text-dark); box-sizing: border-box; font-size: 1rem;">
-			</div>
-
-			<div style="margin-bottom: 1.5rem;">
-				<label style="display: block; color: var(--text-light); font-size: 0.875rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Last Name</label>
-				<input type="text" name="lastName" value="<%= user?.lastName || '' %>" required minlength="1" maxlength="50" pattern="[A-Za-z\s'.-]+" style="width: 100%; padding: 0.75rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(0,0,0,0.2); color: var(--text-dark); box-sizing: border-box; font-size: 1rem;">
-			</div>
-
-			<div style="display: flex; gap: 1rem; justify-content: flex-start;">
-				<button type="submit" class="btn btn-primary">Save Changes</button>
-				<a href="/profile" class="btn" style="background: rgba(255,255,255,0.1); color: var(--text-dark); text-decoration: none; padding: 0.75rem 1.5rem; border-radius: 8px;">Cancel</a>
-			</div>
-		</form>
-	</div>
-</section>
+<form method="POST" action="/profile/edit-name" class="card in mt-8 grid max-w-[620px] gap-5 p-6 d:p-8" style="--d:.15s">
+  <div class="grid grid-cols-1 gap-4 d:grid-cols-2">
+    <div><label for="firstName" class="field-label">First name</label><input id="firstName" type="text" name="firstName" class="field" value="<%= (user && user.firstName) || '' %>" required maxlength="50" pattern="[A-Za-z\s'.\-]+" autocomplete="given-name"></div>
+    <div><label for="lastName" class="field-label">Last name</label><input id="lastName" type="text" name="lastName" class="field" value="<%= (user && user.lastName) || '' %>" required maxlength="50" pattern="[A-Za-z\s'.\-]+" autocomplete="family-name"></div>
+  </div>
+  <div class="flex flex-wrap gap-3"><button type="submit" class="btn btn-dark h-11">Save changes</button><a href="/profile" class="btn btn-light h-11">Cancel</a></div>
+</form>

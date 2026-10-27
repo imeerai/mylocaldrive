@@ -222,10 +222,10 @@
 		if (btn) {
 			const originalHTML = btn.innerHTML;
 			btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-			btn.style.background = '#10b981';
+			btn.style.background = '#3f7d5a';
 			setTimeout(() => {
 				btn.innerHTML = originalHTML;
-				btn.style.background = '#06b6d4';
+				btn.style.background = '';
 			}, 2000);
 		}
 	};
@@ -290,8 +290,8 @@
 			selectAllCheckbox.indeterminate = count > 0 && count < totalCheckboxes;
 		}
 
-		if (bulkDeleteBtn) bulkDeleteBtn.style.display = count > 0 ? 'block' : 'none';
-		if (bulkRestoreBtn) bulkRestoreBtn.style.display = count > 0 ? 'block' : 'none';
+		if (bulkDeleteBtn) bulkDeleteBtn.style.display = count > 0 ? 'inline-flex' : 'none';
+		if (bulkRestoreBtn) bulkRestoreBtn.style.display = count > 0 ? 'inline-flex' : 'none';
 	};
 
 	window.bulkDeleteTrash = async () => {
