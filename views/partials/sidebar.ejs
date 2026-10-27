@@ -1,0 +1,42 @@
+<%
+  const _full2 = [user && user.firstName, user && user.lastName].filter(Boolean).join(' ').trim();
+  const _nm = _full2 || (user && user.username) || 'You';
+  const _in = (_full2 ? _full2.split(/\s+/).map(p => p[0]).join('') : ((user && user.username) || 'U')).slice(0, 2).toUpperCase();
+  const _bytes = typeof storageBytes !== 'undefined' ? Number(storageBytes) || 0 : null;
+  const _mb = _bytes === null ? null : _bytes / (1024 * 1024);
+  const _pct = _mb === null ? 0 : Math.min(100, (_mb / 500) * 100);
+%>
+<aside class="sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col gap-1 border-r border-line-soft bg-white px-4 py-5 d:flex" aria-label="App">
+  <div class="flex items-center gap-2.5 px-2 pb-5">
+    <a href="/dashboard" class="inline-flex items-center gap-2.5 text-ink no-underline">
+      <span class="inline-flex size-[30px] items-center justify-center rounded-lg bg-ink text-white"><%- include('icon', {n:'folder', s:16}) %></span>
+      <span class="text-[17px] font-semibold tracking-[-.3px]">MyDrive</span>
+    </a>
+  </div>
+  <button type="button" data-open-upload class="btn btn-dark mb-4 h-11 w-full"><%- include('icon', {n:'upload', s:16, w:2}) %>Upload</button>
+  <a class="app-link <%= active === 'dashboard' ? 'is-active' : '' %>" href="/dashboard"><%- include('icon', {n:'home'}) %>Home</a>
+  <a class="app-link <%= active === 'files' ? 'is-active' : '' %>" href="/files"><%- include('icon', {n:'folder'}) %>My files<% if (typeof fileCount !== 'undefined') { %><span class="ml-auto text-xs text-faint"><%= fileCount %></span><% } %></a>
+  <a class="app-link" href="/files#trash"><%- include('icon', {n:'trash'}) %>Recycle bin</a>
+  <a class="app-link <%= active === 'profile' ? 'is-active' : '' %>" href="/profile"><%- include('icon', {n:'user'}) %>Profile</a>
+  <a class="app-link <%= active === 'security' ? 'is-active' : '' %>" href="/profile/change-password"><%- include('icon', {n:'lock'}) %>Security</a>
+  <div class="px-3 pt-5 pb-1.5 text-[11px] font-semibold tracking-[.6px] text-faint">MORE</div>
+  <a class="app-link" href="/features"><%- include('icon', {n:'info'}) %>Features</a>
+  <a class="app-link" href="/contact"><%- include('icon', {n:'mail'}) %>Contact</a>
+
+  <div class="mt-auto">
+    <% if (_mb !== null) { %>
+    <div class="px-3 pb-4">
+      <div class="flex justify-between text-xs"><span>Storage</span><span class="text-muted"><%= _mb.toFixed(1) %> / 500 MB</span></div>
+      <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-line-soft"><div class="grow-w h-full rounded-full bg-ink" style="width: <%= _pct.toFixed(1) %>%"></div></div>
+    </div>
+    <% } %>
+    <div class="flex items-center gap-3 rounded-2xl border border-line-soft p-2.5">
+      <a href="/profile" class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-sage text-xs font-semibold text-forest-deep no-underline"><%= _in %></a>
+      <div class="min-w-0 flex-1">
+        <div class="truncate text-[13px] font-medium"><%= _nm %></div>
+        <div class="truncate text-xs text-faint"><%= user && user.email %></div>
+      </div>
+      <a href="/user/logout" data-logout class="icon-btn size-9" aria-label="Sign out" title="Sign out"><%- include('icon', {n:'logout'}) %></a>
+    </div>
+  </div>
+</aside>

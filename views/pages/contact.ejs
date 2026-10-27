@@ -1,94 +1,62 @@
 <% layout('layouts/main') %>
 
-<section class="hero">
-	<div class="container">
-		<div class="hero-copy" style="max-width: 700px; margin: 0 auto; text-align: center;">
-			<div class="pill">Get in touch</div>
-			<h1>Let's talk</h1>
-			<p style="text-align: center; margin: auto;">
-				Have questions? We're here to help. Reach out via email.
-			</p>
-		</div>
-	</div>
+<section class="relative overflow-clip">
+  <div class="sky absolute inset-0" aria-hidden="true"></div>
+  <div class="cloud top-[200px] right-[6%] h-[100px] w-[420px] opacity-80" aria-hidden="true"></div>
+  <%- include('../partials/header', { currentPage: 'contact' }) %>
+
+  <div class="relative grid grid-cols-1 gap-12 px-5 pt-12 pb-24 d:grid-cols-[1fr_1.05fr] d:gap-20 d:px-16 d:pt-16 d:pb-[120px]">
+    <div>
+      <span class="pill in" style="--d:.1s">Contact</span>
+      <h1 class="serif in mt-7 text-[54px] leading-[.98] d:text-[88px]" style="--d:.2s">Get in <i>touch</i></h1>
+      <p class="in mt-5 max-w-[440px] text-[17px] leading-relaxed text-muted" style="--d:.3s">A question, a bug, or an idea for MyDrive? Send a note and it lands straight in the inbox.</p>
+      <div class="in mt-9 grid max-w-[460px] gap-3" style="--d:.4s">
+        <div class="flex items-center gap-4 rounded-2xl border border-line bg-white/80 p-4"><span class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-sage text-forest-deep"><%- include('../partials/icon', {n:'mail', s:18}) %></span><div><div class="text-[15px] font-semibold">Message form</div><div class="text-sm text-muted">Signed-in users can write from this page.</div></div></div>
+        <a class="flex items-center gap-4 rounded-2xl border border-line bg-white/80 p-4 text-ink no-underline transition hover:-translate-y-0.5" href="https://github.com/imeerai" rel="noopener"><span class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-slate-soft text-slate"><%- include('../partials/icon', {n:'github', s:18}) %></span><div><div class="text-[15px] font-semibold">GitHub</div><div class="text-sm text-muted">github.com/imeerai</div></div></a>
+        <div class="flex items-center gap-4 rounded-2xl border border-line bg-white/80 p-4"><span class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-amber-soft text-amber"><%- include('../partials/icon', {n:'clock', s:18}) %></span><div><div class="text-[15px] font-semibold">Replies</div><div class="text-sm text-muted">You'll get a confirmation email right away.</div></div></div>
+      </div>
+    </div>
+
+    <div class="in card self-start p-7 shadow-[0_40px_80px_-50px_rgba(23,40,30,.5)] d:p-10" style="--d:.5s">
+      <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
+        <h2 class="serif m-0 text-[36px] leading-none">Send a <i>message</i></h2>
+        <p class="mt-2 mb-6 text-sm text-muted">Sending as <b class="font-medium text-ink"><%= user && (user.email || user.username) %></b></p>
+        <form id="contactForm" class="grid gap-5" novalidate>
+          <div>
+            <label for="contactSubject" class="field-label">Subject</label>
+            <input id="contactSubject" type="text" name="subject" class="field" placeholder="What is it about?" maxlength="150" required>
+          </div>
+          <div>
+            <label for="contactMessage" class="field-label">Message</label>
+            <textarea id="contactMessage" name="message" class="field" placeholder="Share the details so it can be sorted quickly" maxlength="5000" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-dark w-full"><i class="fas fa-paper-plane"></i> Send Message</button>
+          <div id="contactFeedback" class="form-feedback" role="status" aria-live="polite"></div>
+        </form>
+        <script src="/js/contact-form.js?v=3"></script>
+      <% } else { %>
+        <h2 class="serif m-0 text-[36px] leading-none">Sign in to <i>write</i></h2>
+        <p class="mt-3 mb-7 leading-relaxed text-muted">The message form is for MyDrive users, which keeps spam out and lets replies reach the right inbox.</p>
+        <div class="grid gap-3 d:grid-cols-2">
+          <a class="btn btn-dark" href="/user/login">Sign in</a>
+          <a class="btn btn-light" href="/user/register">Create account</a>
+        </div>
+      <% } %>
+    </div>
+  </div>
 </section>
 
-<section class="feature-band" style="background: var(--bg-light); padding: 4rem 0;">
-	<div class="container" style="max-width: 900px; margin: 0 auto;">
-		<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
-			<!-- Left side - Contact info -->
-			<div>
-				<h2 style="margin-bottom: 1.5rem; font-size: 2rem;">Get in touch</h2>
-				<p style="color: var(--text-light); margin-bottom: 2rem; line-height: 1.6;">
-					Whether you have a question about features, pricing, or anything else, 
-					our team is ready to answer all your questions.
-				</p>
-				
-				<div style="margin-bottom: 1.5rem;">
-					<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-						<div style="width: 40px; height: 40px; background: var(--primary-color); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-								<polyline points="22,6 12,13 2,6"></polyline>
-							</svg>
-						</div>
-						<div>
-							<h4 style="margin: 0; font-size: 0.875rem; color: var(--text-light);">General inquiries</h4>
-							<a href="mailto:info@imeer.ai" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">info@imeer.ai</a>
-						</div>
-					</div>
-				</div>
-				
-				<div style="margin-bottom: 1.5rem;">
-					<div style="display: flex; align-items: center; gap: 1rem;">
-						<div style="width: 40px; height: 40px; background: #8b5cf6; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<circle cx="12" cy="12" r="10"></circle>
-								<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-								<line x1="12" y1="17" x2="12.01" y2="17"></line>
-							</svg>
-						</div>
-						<div>
-							<h4 style="margin: 0; font-size: 0.875rem; color: var(--text-light);">Customer support</h4>
-							<a href="mailto:support@imeer.ai" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">support@imeer.ai</a>
-						</div>
-					</div>
-				</div>
-			</div>
-			
-			<!-- Right side - Contact Form for logged in or CTA for guests -->
-			<div style="background: var(--white); padding: 2.5rem; border-radius: 12px; box-shadow: var(--shadow); border-left: 4px solid var(--primary-color);">
-				<% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
-					<!-- Contact Form for logged in users -->
-					<h3 style="margin-bottom: 1rem;"><i class="fas fa-envelope"></i> Send us a message</h3>
-					
-					<form id="contactForm" style="display: flex; flex-direction: column; gap: 1rem;">
-						<div>
-							<label style="display: block; color: var(--text-light); font-size: 0.875rem; margin-bottom: 0.5rem; text-transform: uppercase;">Subject</label>
-							<input type="text" name="subject" placeholder="Support request subject" style="width: 100%; padding: 0.75rem; border: 2px solid var(--primary-color); border-radius: 8px; background: rgba(129, 140, 248, 0.05); color: var(--text-dark); box-sizing: border-box; font-size: 1rem;" required>
-						</div>
-						
-						<div>
-							<label style="display: block; color: var(--text-light); font-size: 0.875rem; margin-bottom: 0.5rem; text-transform: uppercase;">Message</label>
-							<textarea name="message" placeholder="Please share complete details of your request" style="width: 100%; padding: 0.75rem; border: 2px solid var(--primary-color); border-radius: 8px; background: rgba(129, 140, 248, 0.05); color: var(--text-dark); box-sizing: border-box; min-height: 120px; resize: vertical; font-size: 1rem; font-family: inherit;" required></textarea>
-						</div>
-						
-						<button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; text-align: center;">
-							<i class="fas fa-paper-plane"></i> Send Message
-						</button>
+<section class="grid grid-cols-1 gap-10 px-5 pb-24 d:grid-cols-[1fr_1.2fr] d:gap-20 d:px-16 d:pb-[120px]">
+  <h2 class="serif sv m-0 text-[44px] leading-none d:text-[60px]">Before you <i>write</i></h2>
+  <div class="sv border-b border-line">
+    <% [['I forgot my password.','There is no reset link yet. Send a message from another account or reach out on GitHub and it will be sorted.'],['How do I change my password?','Sign in, open Security from the sidebar, and set a new one.'],['Can I delete my account?','Yes. Profile has a delete option that removes your account and every file you stored.'],['Found a security issue?','Thank you. Please describe it privately through the form rather than in public.']].forEach(function (q) { %>
+    <details class="faq border-t border-line"><summary><%= q[0] %><span class="pl text-[26px]" aria-hidden="true">+</span></summary><p class="mt-0 mb-6 max-w-[560px] text-[15.5px] leading-relaxed text-muted"><%= q[1] %></p></details>
+    <% }) %>
+  </div>
+</section>
 
-						<div id="contactFeedback" class="form-feedback toast" role="status" aria-live="polite"></div>
-					</form>
-					
-					<script src="/js/contact-form.js?v=2"></script>
-				<% } else { %>
-					<!-- CTA Card for guests -->
-					<h3 style="margin-bottom: 1rem;">Ready to get started?</h3>
-					<p style="color: var(--text-light); margin-bottom: 1.5rem; line-height: 1.6;">
-						Create your account and start using IMEER.ai today. Simple, secure, and ready when you are.
-					</p>
-					<a href="/user/register" class="btn btn-primary" style="width: 100%; text-align: center; display: inline-block;">Create account</a>
-				<% } %>
-			</div>
-		</div>
-	</div>
+<section class="relative h-[300px] overflow-hidden" aria-hidden="true">
+  <div class="sky absolute inset-0"></div>
+  <div class="rise absolute inset-x-0 bottom-0 h-[260px]"><%- include('../partials/landscape') %></div>
+  <p class="serif relative pt-16 text-center text-[36px] d:text-[48px]">Thanks for <i>stopping by</i></p>
 </section>

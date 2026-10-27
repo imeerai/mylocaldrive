@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head') %>
+  </head>
+  <%
+    const active = String(block('nav') || '');
+    const _f = [user && user.firstName, user && user.lastName].filter(Boolean).join(' ').trim();
+    const _ini = (_f ? _f.split(/\s+/).map(p => p[0]).join('') : ((user && user.username) || 'U')).slice(0, 2).toUpperCase();
+  %>
+  <body class="overflow-x-clip bg-paper">
+    <%- include('../partials/flash') %>
+    <div class="flex min-h-screen">
+      <%- include('../partials/sidebar', { active }) %>
+      <div class="flex min-w-0 flex-1 flex-col">
+        <!-- Desktop top bar -->
+        <div class="sticky top-0 z-30 hidden h-[76px] items-center justify-between gap-4 border-b border-line-soft bg-paper/85 px-10 backdrop-blur d:flex">
+          <label class="relative flex h-11 w-full max-w-[460px] items-center gap-2.5 rounded-xl bg-[#f1f3f0] px-3.5 text-sm text-faint">
+            <span class="sr-only">Search files on this page</span>
+            <%- include('../partials/icon', {n:'search', s:15, w:2}) %>
+            <input id="appSearch" type="search" placeholder="Search files on this page" class="h-full flex-1 bg-transparent text-ink outline-none placeholder:text-faint" autocomplete="off">
+            <kbd class="rounded border border-line px-1.5 text-[11px]">/</kbd>
+          </label>
+          <div class="flex items-center gap-3">
+            <button type="button" data-open-upload class="btn btn-dark btn-sm h-11"><%- include('../partials/icon', {n:'upload', s:15, w:2}) %>Upload</button>
+            <a href="/profile" class="inline-flex size-11 items-center justify-center rounded-full bg-sage text-[13px] font-semibold text-forest-deep no-underline" aria-label="Profile"><%= _ini %></a>
+          </div>
+        </div>
+        <!-- Mobile top bar -->
+        <div class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line-soft bg-paper/90 px-5 backdrop-blur d:hidden">
+          <a href="/dashboard" class="inline-flex items-center gap-2 text-ink no-underline">
+            <span class="inline-flex size-8 items-center justify-center rounded-lg bg-ink text-white"><%- include('../partials/icon', {n:'folder', s:15}) %></span>
+            <span class="font-semibold">MyDrive</span>
+          </a>
+          <div class="flex items-center gap-2">
+            <a href="/user/logout" data-logout class="icon-btn size-11" aria-label="Sign out"><%- include('../partials/icon', {n:'logout', s:18}) %></a>
+            <a href="/profile" class="inline-flex size-10 items-center justify-center rounded-full bg-sage text-xs font-semibold text-forest-deep no-underline" aria-label="Profile"><%= _ini %></a>
+          </div>
+        </div>
+
+        <main class="flex-1 px-5 pt-6 pb-28 d:px-10 d:pt-9 d:pb-14">
+          <%- body %>
+        </main>
+      </div>
+    </div>
+
+    <!-- Mobile tab bar -->
+    <nav class="fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 rounded-[22px] border border-line bg-white/95 p-1.5 shadow-[0_24px_50px_-24px_rgba(23,40,30,.45)] backdrop-blur d:hidden" aria-label="App tabs">
+      <a href="/dashboard" class="flex h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] no-underline <%= active === 'dashboard' ? 'bg-[#f2f4f1] text-ink' : 'text-muted' %>"><%- include('../partials/icon', {n:'home', s:18}) %>Home</a>
+      <a href="/files" class="flex h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] no-underline <%= active === 'files' ? 'bg-[#f2f4f1] text-ink' : 'text-muted' %>"><%- include('../partials/icon', {n:'folder', s:18}) %>Files</a>
+      <button type="button" data-open-upload class="flex h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl text-[11px] text-muted"><span class="inline-flex size-7 items-center justify-center rounded-full bg-ink text-white"><%- include('../partials/icon', {n:'plus', s:15, w:2.2}) %></span>Upload</button>
+      <a href="/profile" class="flex h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] no-underline <%= active === 'profile' || active === 'security' ? 'bg-[#f2f4f1] text-ink' : 'text-muted' %>"><%- include('../partials/icon', {n:'user', s:18}) %>Profile</a>
+    </nav>
+
+    <%- include('../partials/scripts') %>
+    <script>
+      // Top-bar search: filters rows/cards marked with data-name on the current page
+      (() => {
+        const input = document.getElementById('appSearch');
+        if (!input) return;
+        input.addEventListener('input', () => {
+          const q = input.value.trim().toLowerCase();
+          document.querySelectorAll('[data-name]').forEach((el) => {
+            el.style.display = !q || el.dataset.name.toLowerCase().includes(q) ? '' : 'none';
+          });
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === '/' && !/input|textarea|select/i.test(document.activeElement.tagName)) { e.preventDefault(); input.focus(); }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+<% if (typeof success !== 'undefined' && success) { %>
+<div id="flashMessage" class="flash-toast flash-success" role="status" aria-live="polite">
+  <div class="flex items-center gap-3"><span class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-sage"><%- include('icon', {n:'check', s:15, w:2.2}) %></span><p class="m-0 flex-1 text-ink"><%= success %></p></div>
+</div>
+<% } %>
+<% if (typeof error !== 'undefined' && error) { %>
+<div id="flashMessage" class="flash-toast flash-error" role="status" aria-live="polite">
+  <div class="flex items-center gap-3"><span class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-rust-soft"><%- include('icon', {n:'info', s:15, w:2}) %></span><p class="m-0 flex-1 text-ink"><%= error %></p></div>
+</div>
+<% } %>

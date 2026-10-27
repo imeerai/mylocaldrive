@@ -1,0 +1,35 @@
+<script src="/js/custom-modal.js" defer></script>
+<script src="/js/main.js" defer></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const authSyncKey = 'mydrive-auth-state';
+    const isLoggedIn = <%= typeof isLoggedIn !== 'undefined' && isLoggedIn ? 'true' : 'false' %>;
+    try {
+      const prev = JSON.parse(localStorage.getItem(authSyncKey) || 'null');
+      if (!prev || prev.loggedIn !== isLoggedIn) localStorage.setItem(authSyncKey, JSON.stringify({ loggedIn: isLoggedIn, ts: Date.now() }));
+    } catch (err) {}
+    window.addEventListener('storage', (event) => {
+      if (event.key !== authSyncKey || !event.newValue) return;
+      try { const next = JSON.parse(event.newValue); if (typeof next.loggedIn === 'boolean' && next.loggedIn !== isLoggedIn) window.location.reload(); } catch (err) {}
+    });
+    document.querySelectorAll('[data-logout]').forEach((a) => a.addEventListener('click', () => {
+      try { localStorage.setItem(authSyncKey, JSON.stringify({ loggedIn: false, ts: Date.now() })); } catch (err) {}
+    }));
+    const flash = document.getElementById('flashMessage');
+    if (flash) setTimeout(() => { flash.style.transition = 'opacity .3s, transform .3s'; flash.style.opacity = '0'; setTimeout(() => flash.remove(), 320); }, 2600);
+    // Password visibility toggles
+    document.querySelectorAll('[data-toggle-password]').forEach((btn) => btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.togglePassword);
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.setAttribute('aria-pressed', input.type === 'text');
+    }));
+    // Any upload trigger: open the modal on pages that have it, otherwise go to Files
+    document.querySelectorAll('[data-open-upload]').forEach((btn) => btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (window.openUploadModal) window.openUploadModal(); else window.location.href = '/files#upload';
+    }));
+    document.querySelectorAll('[data-reload]').forEach((b) => b.addEventListener('click', () => location.reload()));
+    if (location.hash === '#upload' && window.openUploadModal) window.openUploadModal();
+  });
+</script>

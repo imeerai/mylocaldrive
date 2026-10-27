@@ -1,0 +1,12 @@
+<%
+  const _ext = String(name || '').split('.').pop().toLowerCase();
+  const _mime = String(typeof mime !== 'undefined' && mime ? mime : '');
+  let _k = 'other';
+  if (_mime.startsWith('image/') || ['jpg','jpeg','png','gif','webp','svg','heic'].includes(_ext)) _k = 'image';
+  else if (_mime.startsWith('video/') || ['mp4','mov','mkv','webm','avi'].includes(_ext)) _k = 'video';
+  else if (_mime.startsWith('audio/') || ['mp3','wav','m4a','ogg'].includes(_ext)) _k = 'audio';
+  else if (['zip','rar','7z','tar','gz'].includes(_ext)) _k = 'archive';
+  else if (_mime.includes('pdf') || ['pdf','doc','docx','txt','md','ppt','pptx','xls','xlsx','csv'].includes(_ext)) _k = 'doc';
+  const _cls = { image: 'bg-amber-soft text-amber', video: 'bg-slate-soft text-slate', audio: 'bg-slate-soft text-slate', archive: 'bg-[#efeee9] text-muted', doc: 'bg-sage text-forest-deep', other: 'bg-[#efeee9] text-muted' }[_k];
+  const _label = (_ext && _ext.length <= 4 && _ext !== String(name).toLowerCase()) ? _ext.toUpperCase() : 'FILE';
+%><span class="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] text-[9.5px] font-semibold tracking-wide <%= _cls %>"><%= _label %></span>

@@ -1,338 +1,115 @@
-<%- layout('layouts/main') %>
+<% layout('layouts/app') %>
+<% block('nav', 'dashboard') %>
+<%
+  const fmt = (b) => b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : b < 1073741824 ? (b / 1048576).toFixed(1) + ' MB' : (b / 1073741824).toFixed(2) + ' GB';
+  const bytes = typeof storageBytes !== 'undefined' ? Number(storageBytes) || 0 : 0;
+  const usedMB = bytes / 1048576;
+  const pct = Math.min(100, (usedMB / 500) * 100);
+  const first = (user && (user.firstName || user.username)) || 'there';
+  const types = typeof byType !== 'undefined' && byType ? byType : [];
+  const typeTotal = types.reduce((s, t) => s + t.bytes, 0) || 1;
+  const shared = Array.isArray(typeof sharedFiles !== 'undefined' ? sharedFiles : null) ? sharedFiles : [];
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+%>
 
-<section style="min-height: calc(100vh - 100px); padding: 3rem 1rem;">
-	<div style="max-width: 1200px; margin: 0 auto;">
-		<!-- Hero Section -->
-		<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; flex-wrap: wrap; gap: 1rem;">
-			<div>
-				<h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Welcome back, <% if (user && user.firstName) { %><%= user.firstName %><% } else { %><%= user.username %><% } %>! <i class="fas fa-star" style="color: var(--primary-color);"></i></h1>
+<div class="in text-sm text-faint" style="--d:.05s"><%= today %></div>
+<h1 class="serif in mt-1 mb-0 text-[44px] leading-none d:text-[64px]" style="--d:.1s">Welcome back, <i><%= first %></i></h1>
+<p class="in mt-3 text-[16px] text-muted" style="--d:.15s"><%= usedMB.toFixed(1) %> MB of 500 MB in use across <%= fileCount || 0 %> file<%= fileCount === 1 ? '' : 's' %>.</p>
 
-		<!-- Confirm Modal -->
-		<div id="confirmModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1100; align-items: center; justify-content: center;">
-			<div style="background: #111827; padding: 1.75rem; border-radius: 12px; max-width: 420px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.55);">
-				<h3 style="margin: 0 0 0.75rem 0; color: var(--text-dark);">Please Confirm</h3>
-				<p id="confirmMessage" style="margin: 0 0 1.25rem 0; color: var(--text-light); line-height: 1.5;"></p>
-				<div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap;">
-					<button id="confirmCancel" class="btn" style="padding: 0.7rem 1.4rem; background: var(--gray-700); border: none; color: white; border-radius: 8px; cursor: pointer;">Cancel</button>
-					<button id="confirmOk" class="btn btn-primary" style="padding: 0.7rem 1.4rem;">Yes, proceed</button>
-				</div>
-			</div>
-		</div>
-				<p style="color: var(--text-light); font-size: 1.1rem;">Manage your files, profile, and storage all in one place.</p>
-			</div>
-			<div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-				<button id="dashboardProfileBtn" class="btn" style="padding: 0.75rem 1.5rem; white-space: nowrap; background: #a78bfa; border: none; color: white; border-radius: 8px; cursor: pointer;"><i class="fas fa-user-circle"></i> Profile</button>
-				<button id="dashboardUploadBtn" class="btn" style="padding: 0.75rem 1.5rem; white-space: nowrap; background: #06b6d4; border: none; color: white; border-radius: 8px; cursor: pointer;"><i class="fas fa-cloud-upload-alt"></i> Upload</button>
-				<button id="dashboardRefreshBtn" class="btn btn-primary" style="padding: 0.75rem 1.5rem; white-space: nowrap;"><i class="fas fa-sync-alt"></i> Refresh</button>
-			</div>
-		</div>
+<div class="in mt-6 flex flex-wrap gap-2.5" style="--d:.2s">
+  <button type="button" data-open-upload class="btn btn-dark btn-sm h-11"><%- include('../partials/icon', {n:'upload', s:15, w:2}) %>Upload files</button>
+  <a href="/files" class="btn btn-light btn-sm h-11"><%- include('../partials/icon', {n:'folder', s:15}) %>Browse files</a>
+  <a href="/profile" class="btn btn-light btn-sm h-11"><%- include('../partials/icon', {n:'user', s:15}) %>Profile</a>
+  <button type="button" id="dashboardRefreshBtn" class="btn btn-light btn-sm h-11" data-reload><%- include('../partials/icon', {n:'restore', s:15}) %>Refresh</button>
+</div>
 
-		<!-- Quick Stats -->
-		<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
-			<div style="background: var(--white); padding: 1.75rem; border-radius: 12px; box-shadow: var(--shadow); border-left: 4px solid var(--primary-color);">
-				<div style="display: flex; justify-content: space-between; align-items: flex-start;">
-					<div>
-						<p style="color: var(--text-light); font-size: 0.8rem; margin: 0 0 0.75rem 0; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;"><i class="fas fa-file" aria-hidden="true"></i> Files</p>
-						<h2 style="font-size: 2.2rem; margin: 0; font-weight: 700; color: var(--primary-color);"><%= fileCount || 0 %></h2>
-					</div>
-					<div style="background: rgba(129, 140, 248, 0.1); padding: 0.75rem; border-radius: 8px;">
-						<i class="fas fa-folder-open" style="font-size: 1.5rem; color: var(--primary-color);"></i>
-					</div>
-				</div>
-			</div>
+<div class="mt-8 grid grid-cols-1 gap-4 d:grid-cols-[1.45fr_1fr]">
+  <section class="card in p-6 d:p-7" style="--d:.25s" aria-labelledby="storageTitle">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 id="storageTitle" class="m-0 text-sm font-medium text-muted">Storage used</h2>
+        <div class="mt-2 text-[32px] font-semibold tracking-[-1px] d:text-[40px]"><%= usedMB.toFixed(1) %> <span class="text-sm font-medium whitespace-nowrap text-faint d:text-base">MB of 500 MB</span></div>
+        <div class="mt-1 text-[13px] text-forest"><%= Math.max(0, 500 - usedMB).toFixed(1) %> MB still free</div>
+      </div>
+      <svg width="88" height="88" viewBox="0 0 120 120" class="shrink-0" aria-hidden="true"><circle cx="60" cy="60" r="48" fill="none" stroke="#eef0ec" stroke-width="12"/><circle cx="60" cy="60" r="48" fill="none" stroke="#3f7d5a" stroke-width="12" stroke-linecap="round" stroke-dasharray="302" stroke-dashoffset="<%= (302 - (302 * pct) / 100).toFixed(1) %>" transform="rotate(-90 60 60)"/><text x="60" y="68" text-anchor="middle" font-family="Instrument Serif, serif" font-size="28" fill="#171b18"><%= Math.round(pct) %>%</text></svg>
+    </div>
+    <div class="mt-6 h-2.5 overflow-hidden rounded-full bg-line-soft" role="progressbar" aria-valuemin="0" aria-valuemax="500" aria-valuenow="<%= usedMB.toFixed(1) %>" aria-label="Storage used"><div class="grow-w h-full rounded-full bg-ink" style="width: <%= pct.toFixed(1) %>%"></div></div>
+    <div class="mt-2 flex justify-between text-xs text-faint"><span>0 MB</span><span>500 MB</span></div>
+  </section>
 
-			<div style="background: var(--white); padding: 1.75rem; border-radius: 12px; box-shadow: var(--shadow); border-left: 4px solid #a78bfa;">
-				<div style="display: flex; justify-content: space-between; align-items: flex-start;">
-					<div>
-						<p style="color: var(--text-light); font-size: 0.8rem; margin: 0 0 0.75rem 0; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;"><i class="fas fa-chart-pie" aria-hidden="true"></i> Used</p>
-						<h2 style="font-size: 2.2rem; margin: 0; font-weight: 700; color: #a78bfa;">
-							<% 
-								let usedMB = storageUnit === 'GB' ? (parseFloat(storageUsed) * 1024) : 
-								             storageUnit === 'MB' ? parseFloat(storageUsed) : 
-								             storageUnit === 'KB' ? (parseFloat(storageUsed) / 1024) : 
-								             (parseFloat(storageUsed) / (1024 * 1024));
-							%>
-							<%= usedMB.toFixed(2) %>
-						</h2>
-						<p style="font-size: 0.75rem; color: var(--text-light); margin: 0.5rem 0 0 0;">of 500 MB</p>
-					</div>
-					<div style="background: rgba(167, 139, 250, 0.1); padding: 0.75rem; border-radius: 8px;">
-						<i class="fas fa-database" style="font-size: 1.5rem; color: #a78bfa;"></i>
-					</div>
-				</div>
-			</div>
+  <section class="card in p-6 d:p-7" style="--d:.3s" aria-labelledby="typeTitle">
+    <h2 id="typeTitle" class="m-0 text-sm font-medium text-muted">By type</h2>
+    <% if (types.length) { %>
+      <div class="mt-5 flex h-2.5 gap-1 overflow-hidden rounded-full" aria-hidden="true">
+        <% types.forEach(function (t) { %><span class="grow-w h-full <%= t.color %>" style="width: <%= Math.max(2, (t.bytes / typeTotal) * 100).toFixed(1) %>%"></span><% }) %>
+      </div>
+      <ul class="mt-5 grid list-none gap-3 p-0 text-sm">
+        <% types.forEach(function (t) { %>
+        <li class="flex items-center gap-2.5"><span class="size-2.5 rounded-[3px] <%= t.color %>"></span><span class="flex-1"><%= t.label %></span><span class="text-faint"><%= t.count %> file<%= t.count === 1 ? '' : 's' %></span><span class="w-20 text-right font-semibold"><%= fmt(t.bytes) %></span></li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p class="mt-5 text-sm text-muted">Nothing stored yet. Your first upload will show up here.</p>
+    <% } %>
+  </section>
+</div>
 
-			<div style="background: var(--white); padding: 1.75rem; border-radius: 12px; box-shadow: var(--shadow); border-left: 4px solid #06b6d4;">
-				<div style="display: flex; justify-content: space-between; align-items: flex-start;">
-					<div>
-						<p style="color: var(--text-light); font-size: 0.8rem; margin: 0 0 0.75rem 0; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Remaining</p>
-						<h2 style="font-size: 2.2rem; margin: 0; font-weight: 700; color: #06b6d4;">
-							<% 
-								let usedMB2 = storageUnit === 'GB' ? (parseFloat(storageUsed) * 1024) : 
-								              storageUnit === 'MB' ? parseFloat(storageUsed) : 
-								              storageUnit === 'KB' ? (parseFloat(storageUsed) / 1024) : 
-								              (parseFloat(storageUsed) / (1024 * 1024));
-								const remaining = (500 - usedMB2).toFixed(2);
-							%>
-							<%= Math.max(0, remaining) %>
-						</h2>
-						<p style="font-size: 0.75rem; color: var(--text-light); margin: 0.5rem 0 0 0;">MB available</p>
-					</div>
-					<div style="background: rgba(6, 182, 212, 0.1); padding: 0.75rem; border-radius: 8px;">
-						<i class="fas fa-hdd" style="font-size: 1.5rem; color: #06b6d4;"></i>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Recent Files -->
-		<div style="background: var(--white); padding: 2rem; border-radius: 12px; box-shadow: var(--shadow);">
-			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-				<h3 style="margin: 0;">Recent Files</h3>
-				<a href="/files" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;"><i class="fas fa-folder-open"></i> View All Files</a>
-			</div>
-			<% if (files && files.length > 0) { %>
-				<div style="overflow-x: auto;">
-					<table style="width: 100%; border-collapse: collapse;">
-						<thead>
-							<tr style="border-bottom: 2px solid var(--gray-200);">
-								<th style="text-align: left; padding: 1rem; color: var(--text-light); width: 50px;">#</th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">File Name</th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">Size</th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">Uploaded</th>
-								<th style="text-align: center; padding: 1rem; color: var(--text-light);">Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							<% files.forEach((file, idx) => { %>
-								<tr style="border-bottom: 1px solid var(--gray-100);">
-									<td style="padding: 1rem; color: var(--text-dark); font-weight: 600;"><%= idx + 1 %></td>
-									<td style="padding: 1rem; color: var(--text-dark); max-width: 340px;">
-										<div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
-											<i class="fas fa-file-alt" aria-hidden="true" style="flex-shrink: 0;"></i>
-											<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; width: 100%;" title="<%= file.originalName %>"><%= file.originalName %></span>
-										</div>
-									</td>
-									<td style="padding: 1rem; color: var(--text-dark);">
-										<% 
-																					let size = file.fileSize;
-																					let sizeKB = (size / 1024).toFixed(2);
-										%>
-										<%= sizeKB %> KB
-									</td>
-									<td style="padding: 1rem; color: var(--text-dark);">
-										<%= new Date(file.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
-									</td>
-									<td style="padding: 1rem; text-align: center;">
-										<button class="file-action-btn" data-action="details" data-file-id="<%= file._id %>" data-file-name="<%= file.originalName %>" data-file-size="<%= file.fileSize %>" data-upload-date="<%= new Date(file.uploadedAt).toISOString() %>" style="background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 1rem; margin: 0 0.5rem;" title="File Details"><i class="fas fa-info-circle"></i></button>
-										<a href="/files/<%= file._id %>" style="color: var(--primary-color); text-decoration: none; margin: 0 0.5rem;" title="Download"><i class="fas fa-download"></i></a>
-										<button class="file-action-btn" data-action="delete" data-file-id="<%= file._id %>" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; margin: 0 0.5rem;" title="Delete"><i class="fas fa-trash"></i></button>
-										<button class="file-action-btn" data-action="rename" data-file-id="<%= file._id %>" data-file-name="<%= file.originalName %>" style="background: none; border: none; color: #f59e0b; cursor: pointer; font-size: 1rem; margin: 0 0.5rem;" title="Rename"><i class="fas fa-edit"></i></button>
-										<button class="file-action-btn" data-action="share" data-file-id="<%= file._id %>" style="background: none; border: none; color: #10b981; cursor: pointer; font-size: 1rem; margin: 0 0.5rem;" title="Share"><i class="fas fa-share-alt"></i></button>
-									</td>
-								</tr>
-							<% }); %>
-						</tbody>
-					</table>
-				</div>
-				<div style="margin-top: 1.5rem; text-align: center;">
-					<a href="/files" class="btn btn-primary" style="display: inline-block; padding: 0.75rem 1.5rem;"><i class="fas fa-folder-open" aria-hidden="true"></i> View All Files</a>
-				</div>
-			<% } else { %>
-				<div style="text-align: center; padding: 2rem; color: var(--text-light);">
-					<p>No files yet. <a href="/files" style="color: var(--primary-color); text-decoration: none;">Upload your first file →</a></p>
-				</div>
-			<% } %>
-		</div>
-
-		<!-- Shared with you -->
-		<div style="background: var(--white); padding: 2rem; border-radius: 12px; box-shadow: var(--shadow); margin-top: 2rem;">
-			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-				<h3 style="margin: 0;">Shared With You</h3>
-			</div>
-			<% const sharedList = Array.isArray(typeof sharedFiles !== 'undefined' ? sharedFiles : []) ? (typeof sharedFiles !== 'undefined' ? sharedFiles : []) : []; %>
-			<% if (sharedList.length > 0) { %>
-				<div style="overflow-x: auto;">
-					<table style="width: 100%; border-collapse: collapse;">
-						<thead>
-							<tr style="border-bottom: 2px solid var(--gray-200);">
-								<th style="text-align: left; padding: 1rem; color: var(--text-light); width: 50px;">#</th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">File Name</th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">Owner</th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">Uploaded</th>
-								<th style="text-align: center; padding: 1rem; color: var(--text-light);">Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							<% sharedList.forEach((file, idx) => { %>
-								<tr style="border-bottom: 1px solid var(--gray-100);">
-									<td style="padding: 1rem; color: var(--text-dark); font-weight: 600;"><%= idx + 1 %></td>
-									<td style="padding: 1rem; color: var(--text-dark); max-width: 340px;">
-										<div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
-											<i class="fas fa-file-alt" aria-hidden="true" style="flex-shrink: 0;"></i>
-											<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; width: 100%;" title="<%= file.originalName %>"><%= file.originalName %></span>
-										</div>
-									</td>
-									<td style="padding: 1rem; color: var(--text-dark);">
-										<%= file.userId?.firstName || file.userId?.lastName ? `${file.userId.firstName || ''} ${file.userId.lastName || ''}`.trim() : (file.userId?.username || 'Owner') %>
-									</td>
-									<td style="padding: 1rem; color: var(--text-dark);">
-										<%= new Date(file.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
-									</td>
-									<td style="padding: 1rem; text-align: center;">
-										<a href="/files/<%= file._id %>" style="color: var(--primary-color); text-decoration: none; margin: 0 0.5rem;" title="Download"><i class="fas fa-download"></i></a>
-									</td>
-								</tr>
-							<% }); %>
-						</tbody>
-					</table>
-				</div>
-			<% } else { %>
-				<div style="text-align: center; padding: 2rem; color: var(--text-light);">
-					<p>No shared files yet.</p>
-				</div>
-			<% } %>
-		</div>
-
-	</div>
+<section class="mt-10" aria-labelledby="recentTitle">
+  <div class="flex items-end justify-between gap-4">
+    <h2 id="recentTitle" class="m-0 text-lg font-semibold">Recent files</h2>
+    <a href="/files" class="text-sm text-muted no-underline hover:text-ink">View all →</a>
+  </div>
+  <% if (files && files.length) { %>
+  <div class="mt-4 overflow-hidden rounded-[18px] border border-line-soft bg-white">
+    <div class="hidden grid-cols-[minmax(0,2.4fr)_1fr_1fr_auto] gap-4 border-b border-line-soft bg-[#fafbf9] px-5 py-3 text-xs text-faint d:grid"><span>Name</span><span>Size</span><span>Uploaded</span><span class="w-[200px] text-right">Actions</span></div>
+    <% files.forEach(function (file) { %>
+    <div class="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-t border-line-soft px-4 py-3 first:border-t-0 transition hover:bg-[#fafbf9] d:grid-cols-[minmax(0,2.4fr)_1fr_1fr_auto] d:px-5" data-name="<%= file.originalName %>">
+      <div class="flex min-w-0 items-center gap-3">
+        <%- include('../partials/file-badge', { name: file.originalName, mime: file.mimeType }) %>
+        <div class="min-w-0"><div class="truncate text-sm font-medium" title="<%= file.originalName %>"><%= file.originalName %></div><div class="text-xs text-faint d:hidden"><%= fmt(file.fileSize) %> · <%= new Date(file.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></div></div>
+      </div>
+      <span class="hidden text-sm text-muted d:block"><%= fmt(file.fileSize) %></span>
+      <span class="hidden text-sm text-muted d:block"><%= new Date(file.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %></span>
+      <div class="flex items-center justify-end gap-0.5">
+        <button type="button" class="file-action-btn icon-btn hidden d:inline-flex" data-action="details" data-file-id="<%= file._id %>" data-file-name="<%= file.originalName %>" data-file-size="<%= file.fileSize %>" data-upload-date="<%= new Date(file.uploadedAt).toISOString() %>" aria-label="Details for <%= file.originalName %>" title="Details"><%- include('../partials/icon', {n:'info'}) %></button>
+        <a href="/files/<%= file._id %>" class="icon-btn" aria-label="Download <%= file.originalName %>" title="Download"><%- include('../partials/icon', {n:'download'}) %></a>
+        <button type="button" class="file-action-btn icon-btn" data-action="share" data-file-id="<%= file._id %>" aria-label="Share <%= file.originalName %>" title="Share"><%- include('../partials/icon', {n:'share'}) %></button>
+        <button type="button" class="file-action-btn icon-btn hidden d:inline-flex" data-action="rename" data-file-id="<%= file._id %>" data-file-name="<%= file.originalName %>" aria-label="Rename <%= file.originalName %>" title="Rename"><%- include('../partials/icon', {n:'edit'}) %></button>
+        <button type="button" class="file-action-btn icon-btn hover:!text-rust" data-action="delete" data-file-id="<%= file._id %>" aria-label="Delete <%= file.originalName %>" title="Delete"><%- include('../partials/icon', {n:'trash'}) %></button>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } else { %>
+  <button type="button" data-open-upload class="mt-4 flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-[18px] border-[1.5px] border-dashed border-[#cfd5cd] bg-[#f7f9f6] px-6 py-12 text-center transition hover:border-ink">
+    <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-white text-forest shadow-sm"><%- include('../partials/icon', {n:'upload', s:22}) %></span>
+    <span class="font-medium">No files yet</span>
+    <span class="text-sm text-muted">Upload your first file to get started.</span>
+  </button>
+  <% } %>
 </section>
 
-<!-- Include shared file modals -->
+<section class="mt-10" aria-labelledby="sharedTitle">
+  <h2 id="sharedTitle" class="m-0 text-lg font-semibold">Shared with you</h2>
+  <% if (shared.length) { %>
+  <div class="mt-4 grid grid-cols-1 gap-3 d:grid-cols-2">
+    <% shared.forEach(function (file) { %>
+    <div class="flex items-center gap-3 rounded-2xl border border-line-soft bg-white p-3.5" data-name="<%= file.originalName %>">
+      <%- include('../partials/file-badge', { name: file.originalName, mime: file.mimeType }) %>
+      <div class="min-w-0 flex-1">
+        <div class="truncate text-sm font-medium" title="<%= file.originalName %>"><%= file.originalName %></div>
+        <div class="truncate text-xs text-faint">from <%= file.userId && (file.userId.firstName || file.userId.lastName) ? ((file.userId.firstName || '') + ' ' + (file.userId.lastName || '')).trim() : ((file.userId && file.userId.username) || 'Owner') %> · <%= new Date(file.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></div>
+      </div>
+      <a href="/files/<%= file._id %>" class="icon-btn" aria-label="Download <%= file.originalName %>"><%- include('../partials/icon', {n:'download'}) %></a>
+    </div>
+    <% }) %>
+  </div>
+  <% } else { %>
+  <p class="mt-3 text-sm text-muted">Files other people share with your username will appear here.</p>
+  <% } %>
+</section>
+
 <%- include('../partials/file-modals') %>
-
-<script>
-	// Toast notification functions - Define FIRST before file-operations.js loads
-	function showError(msg) {
-		console.error('Error:', msg);
-		alert('Error: ' + msg);
-	}
-
-	function showSuccess(msg) {
-		alert('Success: ' + msg);
-	}
-
-	// Expose globally BEFORE file-operations.js
-	window.showError = showError;
-	window.showSuccess = showSuccess;
-	
-</script>
-
-<!-- Load shared file operations AFTER helper functions -->
 <script src="/js/file-operations.js"></script>
 <script src="/js/file-actions.js"></script>
-
-<script>
-	// Dashboard-specific button handlers
-	function bindDashboardButtons() {
-		const profileBtn = document.getElementById('dashboardProfileBtn');
-		const uploadBtn = document.getElementById('dashboardUploadBtn');
-		const quickUploadBtn = document.getElementById('quickUploadBtn');
-		const refreshBtn = document.getElementById('dashboardRefreshBtn');
-		const uploadFloatBtn = document.getElementById('uploadBtnFloat');
-		
-		if (profileBtn) profileBtn.addEventListener('click', () => window.location.href = '/profile');
-		if (refreshBtn) refreshBtn.addEventListener('click', () => window.location.reload());
-		
-		// All upload buttons use the shared modal
-		[uploadBtn, quickUploadBtn, uploadFloatBtn].forEach(btn => {
-			if (btn) {
-				btn.addEventListener('click', () => {
-					if (window.openUploadModal) {
-						window.openUploadModal();
-					} else {
-						console.error('[Dashboard] openUploadModal not found!');
-					}
-				});
-			}
-		});
-		
-		// Event delegation for file action buttons
-		document.addEventListener('click', (e) => {
-			// Handle file action buttons
-			const actionBtn = e.target.closest('.file-action-btn');
-			if (actionBtn) {
-				e.preventDefault();
-				const action = actionBtn.dataset.action;
-				const fileId = actionBtn.dataset.fileId;
-				const fileName = actionBtn.dataset.fileName;
-				const fileSize = actionBtn.dataset.fileSize;
-				const uploadDate = actionBtn.dataset.uploadDate;
-				
-				switch(action) {
-					case 'details':
-						if (window.showFileDetails) {
-							window.showFileDetails(fileId, fileName, parseInt(fileSize), uploadDate);
-						}
-						break;
-					case 'delete':
-						if (window.deleteFileFromDashboard) {
-							window.deleteFileFromDashboard(fileId);
-						}
-						break;
-					case 'rename':
-						if (window.showRenameModal) {
-							window.showRenameModal(fileId, fileName);
-						}
-						break;
-					case 'share':
-						if (window.showShareModal) {
-							window.showShareModal(fileId);
-						}
-						break;
-				}
-				return;
-			}
-			
-			// Handle modal close buttons
-			const closeBtn = e.target.closest('.modal-close-btn');
-			if (closeBtn) {
-				e.preventDefault();
-				const modalId = closeBtn.dataset.modal;
-				if (modalId) {
-					document.getElementById(modalId).style.display = 'none';
-				}
-				return;
-			}
-			
-			// Handle modal action buttons
-			const modalActionBtn = e.target.closest('.modal-action-btn');
-			if (modalActionBtn) {
-				e.preventDefault();
-				const action = modalActionBtn.dataset.action;
-				
-				if (action === 'confirmRename' && window.confirmRename) {
-					window.confirmRename();
-				} else if (action === 'confirmShare' && window.confirmShare) {
-					window.confirmShare();
-				} else if (action === 'copyShareLink' && window.copyShareLink) {
-					window.copyShareLink();
-				} else if (action === 'toggleProgressCollapse' && window.toggleProgressCollapse) {
-					window.toggleProgressCollapse();
-				} else if (action === 'toggleProgressVisibility' && window.toggleProgressVisibility) {
-					window.toggleProgressVisibility();
-				} else if (action === 'showProgressPanel' && window.toggleProgressVisibility) {
-					window.toggleProgressVisibility();
-				} else if (action === 'closeProgress' && window.hideProgressPopup) {
-					window.hideProgressPopup();
-				} else if (action === 'cancelAllUploads' && window.cancelAllUploads) {
-					window.cancelAllUploads();
-				}
-				return;
-			}
-		});
-		
-		// Verify action functions are available
-		const requiredFunctions = ['showFileDetails', 'deleteFileFromDashboard', 'showRenameModal', 'showShareModal'];
-		requiredFunctions.forEach(fn => {
-			if (typeof window[fn] !== 'function') {
-				console.error(`[Dashboard] Missing function: ${fn}`);
-			}
-		});
-	}
-
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', bindDashboardButtons);
-	} else {
-		bindDashboardButtons();
-	}
-</script>
+<script src="/js/file-page-events.js"></script>

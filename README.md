@@ -78,3 +78,17 @@ IMEER.ai
 
 
 
+
+## Frontend (Tailwind CSS)
+
+The UI is built with Tailwind CSS v4. Source styles live in `src/styles.css`; the compiled file is `public/css/app.css` (committed, so Vercel serves it without a build step).
+
+```bash
+npm install
+npm run build:css   # one-off build (minified)
+npm run watch:css   # rebuild while editing views
+```
+
+Rebuild the CSS after changing classes in `views/`, `public/js/` or `controllers/`.
+
+Fonts (Instrument Serif, Inter) are self-hosted in `public/fonts/`. Secrets stay in `.env` on the server; see `.env.example` for the variable names.

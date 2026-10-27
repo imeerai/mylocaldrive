@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mobile menu functionality
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
     const navMenu = document.getElementById('navMenu');
-    const mobileQuery = window.matchMedia('(max-width: 968px)');
+    const mobileQuery = window.matchMedia('(max-width: 820px)');
 
     if (!mobileMenuToggle || !navMenu) {
         return;

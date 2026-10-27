@@ -1,347 +1,115 @@
-<%- layout('layouts/main') %>
+<% layout('layouts/app') %>
+<% block('nav', 'files') %>
+<%
+  const fmt = (b) => b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : b < 1073741824 ? (b / 1048576).toFixed(1) + ' MB' : (b / 1073741824).toFixed(2) + ' GB';
+  const date = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  const trash = Array.isArray(typeof trashedFiles !== 'undefined' ? trashedFiles : null) ? trashedFiles : [];
+  const pg = typeof pagination !== 'undefined' ? pagination : { totalPages: 1, currentPage: 1 };
+%>
 
-<section style="min-height: calc(100vh - 100px); padding: 3rem 1rem;">
-	<div style="max-width: 1200px; margin: 0 auto;">
-		<!-- Header -->
-		<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-			<div>
-				<a href="/dashboard" style="color: var(--primary-color); text-decoration: none; font-size: 0.875rem;"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-				<h1 style="font-size: 2.5rem; margin: 1rem 0 0.5rem 0;">My Files</h1>
-				<p style="color: var(--text-light);">Upload, manage, and share your files securely</p>
-			</div>
-			<button id="filesUploadBtn" class="btn btn-primary" style="padding: 0.75rem 1.5rem; white-space: nowrap;"><i class="fas fa-cloud-upload-alt"></i> Upload</button>
-		</div>
+<nav class="in text-sm text-faint" style="--d:.05s" aria-label="Breadcrumb"><a href="/dashboard" class="text-faint no-underline hover:text-ink">Home</a> <span aria-hidden="true">/</span> <span class="text-ink">My files</span></nav>
+<div class="in mt-2 flex flex-wrap items-end justify-between gap-4" style="--d:.1s">
+  <div>
+    <h1 class="serif m-0 text-[44px] leading-none d:text-[64px]">My <i>files</i></h1>
+    <p class="mt-3 mb-0 text-muted"><%= (pg.totalFiles || fileCount || 0) %> file<%= (pg.totalFiles || fileCount) === 1 ? '' : 's' %> · <%= fmt(Number(typeof storageBytes !== 'undefined' ? storageBytes : 0) || 0) %> used</p>
+  </div>
+  <div class="flex flex-wrap items-center gap-2.5">
+    <label for="sortSelect" class="sr-only">Sort files</label>
+    <select id="sortSelect" class="field h-11 w-auto cursor-pointer rounded-full pr-10 text-sm">
+      <option value="date" <%= currentSort === 'date' ? 'selected' : '' %>>Newest first</option>
+      <option value="oldest" <%= currentSort === 'oldest' ? 'selected' : '' %>>Oldest first</option>
+      <option value="name" <%= currentSort === 'name' ? 'selected' : '' %>>Name (A–Z)</option>
+      <option value="size" <%= currentSort === 'size' ? 'selected' : '' %>>Largest first</option>
+    </select>
+    <button type="button" data-open-upload class="btn btn-dark btn-sm h-11"><%- include('../partials/icon', {n:'upload', s:15, w:2}) %>Upload</button>
+  </div>
+</div>
 
-		<!-- Files List -->
-		<div style="background: var(--white); padding: 2rem; border-radius: 12px; box-shadow: var(--shadow);">
-			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-				<h3 style="margin: 0;">Your Files</h3>
-				
-				<!-- Sort Controls -->
-				<div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-					<span style="color: var(--text-light); font-size: 0.875rem;">Sort by:</span>
-					<select id="sortSelect" style="padding: 0.5rem 0.75rem; background: #1f2937; color: white; border: 1px solid rgba(129, 140, 248, 0.3); border-radius: 6px; cursor: pointer;">
-						<option value="date" <%= currentSort === 'date' ? 'selected' : '' %>>Newest First</option>
-						<option value="oldest" <%= currentSort === 'oldest' ? 'selected' : '' %>>Oldest First</option>
-						<option value="name" <%= currentSort === 'name' ? 'selected' : '' %>>Name (A-Z)</option>
-						<option value="size" <%= currentSort === 'size' ? 'selected' : '' %>>Size (Large First)</option>
-					</select>
-				</div>
-			</div>
+<button type="button" data-open-upload class="in mt-7 flex w-full cursor-pointer items-center justify-center gap-3 rounded-[18px] border-[1.5px] border-dashed border-[#cfd5cd] bg-[#f7f9f6] px-5 py-5 text-sm text-muted transition hover:border-ink hover:text-ink" style="--d:.15s">
+  <span class="inline-flex size-9 items-center justify-center rounded-xl bg-white text-forest shadow-sm"><%- include('../partials/icon', {n:'upload', s:17}) %></span>
+  Drop files in the upload window, or click to choose
+</button>
 
-			<% if (files && files.length > 0) { %>
-				<div style="overflow-x: auto;">
-					<table style="width: 100%; border-collapse: collapse;">
-						<thead>
-							<tr style="border-bottom: 2px solid var(--gray-200);">
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">File Name</th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">Size</th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">Uploaded</th>
-								<th style="text-align: center; padding: 1rem; color: var(--text-light);">Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							<% files.forEach(file => { %>
-								<tr style="border-bottom: 1px solid var(--gray-100); transition: background 0.2s ease;">
-									<td style="padding: 1rem; color: var(--text-dark); max-width: 360px;">
-										<div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
-											<i class="fas fa-file" style="flex-shrink: 0;"></i>
-											<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; width: 100%;" title="<%= file.originalName %>"><%= file.originalName %></span>
-										</div>
-									</td>
-									<td style="padding: 1rem; color: var(--text-dark);">
-										<% 
-											let size = file.fileSize; 
-											let sizeStr = '';
-											if (size < 1024) sizeStr = size + ' B';
-											else if (size < 1024 * 1024) sizeStr = (size / 1024).toFixed(2) + ' KB';
-											else if (size < 1024 * 1024 * 1024) sizeStr = (size / (1024 * 1024)).toFixed(2) + ' MB';
-											else sizeStr = (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
-										%>
-										<%= sizeStr %>
-									</td>
-									<td style="padding: 1rem; color: var(--text-dark);">
-										<%= new Date(file.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
-									</td>
-									<td style="padding: 1rem; text-align: center;">
-										<button class="file-action-btn" data-action="details" data-file-id="<%= file._id %>" data-file-name="<%= file.originalName %>" data-file-size="<%= file.fileSize %>" data-upload-date="<%= new Date(file.uploadedAt).toISOString() %>" style="background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 1rem; margin: 0 0.5rem;" title="File Details"><i class="fas fa-info-circle"></i></button>
-										<a href="/files/<%= file._id %>" style="color: var(--primary-color); text-decoration: none; margin: 0 0.5rem;" title="Download"><i class="fas fa-download"></i></a>
-										<button class="file-action-btn" data-action="delete" data-file-id="<%= file._id %>" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; margin: 0 0.5rem;" title="Delete"><i class="fas fa-trash"></i></button>
-										<button class="file-action-btn" data-action="rename" data-file-id="<%= file._id %>" data-file-name="<%= file.originalName %>" style="background: none; border: none; color: #f59e0b; cursor: pointer; font-size: 1rem; margin: 0 0.5rem;" title="Rename"><i class="fas fa-edit"></i></button>
-										<button class="file-action-btn" data-action="share" data-file-id="<%= file._id %>" style="background: none; border: none; color: #10b981; cursor: pointer; font-size: 1rem; margin: 0 0.5rem;" title="Share"><i class="fas fa-share-alt"></i></button>
-									</td>
-								</tr>
-							<% }); %>
-						</tbody>
-					</table>
-				</div>
+<section class="in mt-6" style="--d:.2s" aria-label="Your files">
+  <% if (files && files.length) { %>
+  <div class="overflow-hidden rounded-[18px] border border-line-soft bg-white">
+    <div class="hidden grid-cols-[minmax(0,2.4fr)_1fr_1.2fr_auto] gap-4 border-b border-line-soft bg-[#fafbf9] px-5 py-3 text-xs text-faint d:grid"><span>Name</span><span>Size</span><span>Uploaded</span><span class="w-[200px] text-right">Actions</span></div>
+    <% files.forEach(function (file) { %>
+    <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-t border-line-soft px-4 py-3 first:border-t-0 transition hover:bg-[#fafbf9] d:grid-cols-[minmax(0,2.4fr)_1fr_1.2fr_auto] d:px-5" data-name="<%= file.originalName %>">
+      <div class="flex min-w-0 items-center gap-3">
+        <%- include('../partials/file-badge', { name: file.originalName, mime: file.mimeType }) %>
+        <div class="min-w-0"><div class="truncate text-sm font-medium" title="<%= file.originalName %>"><%= file.originalName %></div><div class="text-xs text-faint d:hidden"><%= fmt(file.fileSize) %> · <%= date(file.uploadedAt) %></div></div>
+      </div>
+      <span class="hidden text-sm text-muted d:block"><%= fmt(file.fileSize) %></span>
+      <span class="hidden text-sm text-muted d:block"><%= new Date(file.uploadedAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
+      <div class="col-span-2 -ml-2 flex items-center gap-0.5 d:col-span-1 d:ml-0 d:justify-end">
+        <button type="button" class="file-action-btn icon-btn" data-action="details" data-file-id="<%= file._id %>" data-file-name="<%= file.originalName %>" data-file-size="<%= file.fileSize %>" data-upload-date="<%= new Date(file.uploadedAt).toISOString() %>" aria-label="Details for <%= file.originalName %>" title="Details"><%- include('../partials/icon', {n:'info'}) %></button>
+        <a href="/files/<%= file._id %>" class="icon-btn" aria-label="Download <%= file.originalName %>" title="Download"><%- include('../partials/icon', {n:'download'}) %></a>
+        <button type="button" class="file-action-btn icon-btn" data-action="share" data-file-id="<%= file._id %>" aria-label="Share <%= file.originalName %>" title="Share"><%- include('../partials/icon', {n:'share'}) %></button>
+        <button type="button" class="file-action-btn icon-btn" data-action="rename" data-file-id="<%= file._id %>" data-file-name="<%= file.originalName %>" aria-label="Rename <%= file.originalName %>" title="Rename"><%- include('../partials/icon', {n:'edit'}) %></button>
+        <button type="button" class="file-action-btn icon-btn hover:!text-rust" data-action="delete" data-file-id="<%= file._id %>" aria-label="Delete <%= file.originalName %>" title="Move to recycle bin"><%- include('../partials/icon', {n:'trash'}) %></button>
+      </div>
+    </div>
+    <% }) %>
+  </div>
 
-				<!-- Pagination -->
-				<% if (pagination.totalPages > 1) { %>
-					<div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; flex-wrap: wrap;">
-						<% if (pagination.hasPrevPage) { %>
-							<a href="/files?sort=<%= currentSort %>&page=<%= pagination.currentPage - 1 %>" class="btn" style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border-radius: 6px; text-decoration: none; cursor: pointer;">
-								<i class="fas fa-chevron-left"></i> Previous
-							</a>
-						<% } %>
-						
-						<div style="display: flex; gap: 0.25rem;">
-							<% for (let i = 1; i <= pagination.totalPages; i++) { %>
-								<% if (i === pagination.currentPage) { %>
-									<span style="padding: 0.5rem 0.75rem; background: var(--primary-color); color: white; border-radius: 6px; font-weight: bold;"><%= i %></span>
-								<% } else { %>
-									<a href="/files?sort=<%= currentSort %>&page=<%= i %>" style="padding: 0.5rem 0.75rem; background: #1f2937; color: white; border-radius: 6px; text-decoration: none; cursor: pointer;">
-										<%= i %>
-									</a>
-								<% } %>
-							<% } %>
-						</div>
-						
-						<% if (pagination.hasNextPage) { %>
-							<a href="/files?sort=<%= currentSort %>&page=<%= pagination.currentPage + 1 %>" class="btn" style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border-radius: 6px; text-decoration: none; cursor: pointer;">
-								Next <i class="fas fa-chevron-right"></i>
-							</a>
-						<% } %>
-					</div>
-				<% } %>
-			<% } else { %>
-				<div style="text-align: center; padding: 3rem 2rem; color: var(--text-light);">
-					<p style="font-size: 2rem;"><i class="fas fa-folder-open"></i></p>
-					<p>No files uploaded yet.</p>
-					<button id="filesUploadEmptyBtn" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-cloud-upload-alt"></i> Upload Your First File</button>
-				</div>
-			<% } %>
-		</div>
-
-		<!-- Recycle Bin -->
-		<div style="background: var(--white); padding: 2rem; border-radius: 12px; box-shadow: var(--shadow); margin-top: 2rem;">
-			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
-				<h3 style="margin: 0;">Recycle Bin</h3>
-				<p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">Files stay here until permanently deleted.</p>
-			</div>
-			<% if (trashedFiles && trashedFiles.length > 0) { %>
-				<!-- Bulk Actions -->
-				<div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: rgba(129, 140, 248, 0.05); border-radius: 8px; align-items: center; flex-wrap: wrap;">
-					<label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin: 0;">
-					<input type="checkbox" id="selectAllTrash" style="width: 18px; height: 18px; cursor: pointer;">
-					<span style="color: var(--text-dark); font-weight: 500;">Select All</span>
-				</label>
-				<span id="trashSelectedCount" style="color: var(--text-light); font-size: 0.9rem; margin-left: auto;">0 selected</span>
-				<button id="bulkDeleteBtn" class="btn trash-action-btn" data-trash-action="bulkDelete" style="padding: 0.5rem 1rem; background: #ef4444; border: none; color: white; border-radius: 8px; cursor: pointer; display: none;">
-					<i class="fas fa-trash-alt"></i> Delete Selected
-				</button>
-				<button id="bulkRestoreBtn" class="btn trash-action-btn" data-trash-action="bulkRestore" style="padding: 0.5rem 1rem; background: #10b981; border: none; color: white; border-radius: 8px; cursor: pointer; display: none;">
-						<i class="fas fa-undo"></i> Restore Selected
-					</button>
-				</div>
-
-				<div style="overflow-x: auto;">
-					<table style="width: 100%; border-collapse: collapse;">
-						<thead>
-							<tr style="border-bottom: 2px solid var(--gray-200);">
-								<th style="text-align: center; padding: 1rem; color: var(--text-light); width: 50px;"><i class="fas fa-check-square"></i></th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">File Name</th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">Size</th>
-								<th style="text-align: left; padding: 1rem; color: var(--text-light);">Deleted</th>
-								<th style="text-align: center; padding: 1rem; color: var(--text-light);">Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							<% trashedFiles.forEach(file => { %>
-								<tr style="border-bottom: 1px solid var(--gray-100);">
-																		<td style="padding: 1rem; text-align: center;">
-																		<input type="checkbox" class="trashCheckbox" value="<%= file._id %>" style="width: 18px; height: 18px; cursor: pointer;">
-																		</td>
-									<td style="padding: 1rem; color: var(--text-dark); max-width: 340px;">
-										<div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
-											<i class="fas fa-trash" style="color: #ef4444; flex-shrink: 0;"></i>
-											<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; width: 100%;" title="<%= file.originalName %>"><%= file.originalName %></span>
-										</div>
-									</td>
-									<td style="padding: 1rem; color: var(--text-dark);">
-										<%
-											let size = file.fileSize;
-											let sizeStr = '';
-											if (size < 1024) sizeStr = size + ' B';
-											else if (size < 1024 * 1024) sizeStr = (size / 1024).toFixed(2) + ' KB';
-											else if (size < 1024 * 1024 * 1024) sizeStr = (size / (1024 * 1024)).toFixed(2) + ' MB';
-											else sizeStr = (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
-										%>
-										<%= sizeStr %>
-									</td>
-									<td style="padding: 1rem; color: var(--text-dark);">
-										<%= new Date(file.deletedAt || file.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
-									</td>
-									<td style="padding: 1rem; text-align: center; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
-									<button class="btn trash-action-btn" data-trash-action="restore" data-file-id="<%= file._id %>" style="padding: 0.5rem 1rem; background: #10b981; border: none; color: white; border-radius: 8px; cursor: pointer;">
-										<i class="fas fa-undo"></i> Restore
-									</button>
-									<button class="btn trash-action-btn" data-trash-action="deleteForever" data-file-id="<%= file._id %>" style="padding: 0.5rem 1rem; background: #ef4444; border: none; color: white; border-radius: 8px; cursor: pointer;">
-											<i class="fas fa-skull-crossbones"></i> Delete Forever
-										</button>
-									</td>
-								</tr>
-							<% }); %>
-						</tbody>
-					</table>
-				</div>
-			<% } else { %>
-				<div style="text-align: center; padding: 2rem; color: var(--text-light);">
-					<p><i class="fas fa-check-circle"></i> Recycle Bin is empty.</p>
-				</div>
-			<% } %>
-		</div>
-	</div>
+  <% if (pg.totalPages > 1) { %>
+  <nav class="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="Pagination">
+    <span class="text-faint">Page <%= pg.currentPage %> of <%= pg.totalPages %></span>
+    <div class="flex flex-wrap items-center gap-1.5">
+      <% if (pg.hasPrevPage) { %><a class="btn btn-light btn-sm" href="/files?sort=<%= currentSort %>&page=<%= pg.currentPage - 1 %>">← Previous</a><% } %>
+      <% for (let i = 1; i <= pg.totalPages; i++) { %>
+        <% if (i === pg.currentPage) { %><span class="inline-flex size-10 items-center justify-center rounded-full bg-ink font-medium text-white" aria-current="page"><%= i %></span>
+        <% } else { %><a class="inline-flex size-10 items-center justify-center rounded-full text-ink no-underline hover:bg-white" href="/files?sort=<%= currentSort %>&page=<%= i %>"><%= i %></a><% } %>
+      <% } %>
+      <% if (pg.hasNextPage) { %><a class="btn btn-light btn-sm" href="/files?sort=<%= currentSort %>&page=<%= pg.currentPage + 1 %>">Next →</a><% } %>
+    </div>
+  </nav>
+  <% } %>
+  <% } else { %>
+  <div class="flex flex-col items-center gap-3 rounded-[18px] border border-line-soft bg-white px-6 py-14 text-center">
+    <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-sage text-forest-deep"><%- include('../partials/icon', {n:'folder', s:22}) %></span>
+    <span class="font-medium">No files uploaded yet</span>
+    <button type="button" data-open-upload class="btn btn-dark btn-sm mt-1">Upload your first file</button>
+  </div>
+  <% } %>
 </section>
 
-<!-- Include shared file modals -->
+<section id="trash" class="mt-12 scroll-mt-24" aria-labelledby="trashTitle">
+  <div class="flex flex-wrap items-end justify-between gap-2">
+    <h2 id="trashTitle" class="serif m-0 text-[36px] leading-none">Recycle <i>bin</i></h2>
+    <p class="m-0 text-sm text-muted">Files stay here until you delete them for good.</p>
+  </div>
+  <% if (trash.length) { %>
+  <div class="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-mist px-4 py-3">
+    <label class="flex cursor-pointer items-center gap-2.5 text-sm font-medium"><input type="checkbox" id="selectAllTrash" class="size-[18px] accent-ink"> Select all</label>
+    <span id="trashSelectedCount" class="ml-auto text-sm text-muted">0 selected</span>
+    <button type="button" id="bulkRestoreBtn" class="trash-action-btn btn btn-light btn-sm h-9" data-trash-action="bulkRestore" style="display: none;"><%- include('../partials/icon', {n:'restore', s:14}) %>Restore selected</button>
+    <button type="button" id="bulkDeleteBtn" class="trash-action-btn btn btn-danger btn-sm h-9" data-trash-action="bulkDelete" style="display: none;"><%- include('../partials/icon', {n:'trash', s:14}) %>Delete selected</button>
+  </div>
+  <div class="mt-3 overflow-hidden rounded-[18px] border border-line-soft bg-white">
+    <% trash.forEach(function (file) { %>
+    <div class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 border-t border-line-soft px-4 py-3 first:border-t-0 d:grid-cols-[auto_minmax(0,2fr)_1fr_1.2fr_auto] d:px-5" data-name="<%= file.originalName %>">
+      <input type="checkbox" class="trashCheckbox size-[18px] accent-ink" value="<%= file._id %>" aria-label="Select <%= file.originalName %>">
+      <div class="flex min-w-0 items-center gap-3 opacity-75">
+        <%- include('../partials/file-badge', { name: file.originalName, mime: file.mimeType }) %>
+        <span class="truncate text-sm font-medium" title="<%= file.originalName %>"><%= file.originalName %></span>
+      </div>
+      <span class="hidden text-sm text-muted d:block"><%= fmt(file.fileSize) %></span>
+      <span class="hidden text-sm text-muted d:block">Deleted <%= date(file.deletedAt || file.updatedAt) %></span>
+      <div class="col-span-2 flex justify-end gap-2 d:col-span-1">
+        <button type="button" class="trash-action-btn btn btn-light btn-sm h-9" data-trash-action="restore" data-file-id="<%= file._id %>"><%- include('../partials/icon', {n:'restore', s:14}) %>Restore</button>
+        <button type="button" class="trash-action-btn btn btn-danger btn-sm h-9" data-trash-action="deleteForever" data-file-id="<%= file._id %>">Delete forever</button>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } else { %>
+  <p class="mt-4 flex items-center gap-2 text-sm text-muted"><span class="text-forest"><%- include('../partials/icon', {n:'check', s:16, w:2.2}) %></span>The recycle bin is empty.</p>
+  <% } %>
+</section>
+
 <%- include('../partials/file-modals') %>
-
-<script>
-	// Toast notification functions - Define FIRST before file-operations.js loads
-	function showError(msg) {
-		console.error('Error:', msg);
-		alert('Error: ' + msg);
-	}
-
-	function showSuccess(msg) {
-		alert('Success: ' + msg);
-	}
-
-	// Expose globally BEFORE file-operations.js
-	window.showError = showError;
-	window.showSuccess = showSuccess;
-	
-</script>
-
-<!-- Load shared file operations AFTER helper functions -->
 <script src="/js/file-operations.js"></script>
 <script src="/js/file-actions.js"></script>
-
-<script>
-	// Event delegation for all button types
-	document.addEventListener('click', (e) => {
-		// Handle file action buttons
-		const actionBtn = e.target.closest('.file-action-btn');
-		if (actionBtn) {
-			e.preventDefault();
-			const action = actionBtn.dataset.action;
-			const fileId = actionBtn.dataset.fileId;
-			const fileName = actionBtn.dataset.fileName;
-			const fileSize = actionBtn.dataset.fileSize;
-			const uploadDate = actionBtn.dataset.uploadDate;
-			
-			switch(action) {
-				case 'details':
-					if (window.showFileDetails) {
-						window.showFileDetails(fileId, fileName, parseInt(fileSize), uploadDate);
-					}
-					break;
-				case 'delete':
-					if (window.deleteFile) {
-						window.deleteFile(fileId);
-					}
-					break;
-				case 'rename':
-					if (window.showRenameModal) {
-						window.showRenameModal(fileId, fileName);
-					}
-					break;
-				case 'share':
-					if (window.showShareModal) {
-						window.showShareModal(fileId);
-					}
-					break;
-			}
-			return;
-		}
-		
-		// Handle modal close buttons
-		const closeBtn = e.target.closest('.modal-close-btn');
-		if (closeBtn) {
-			e.preventDefault();
-			const modalId = closeBtn.dataset.modal;
-			if (modalId) {
-				document.getElementById(modalId).style.display = 'none';
-			}
-			return;
-		}
-		
-		// Handle modal action buttons
-		const modalActionBtn = e.target.closest('.modal-action-btn');
-		if (modalActionBtn) {
-			e.preventDefault();
-			const action = modalActionBtn.dataset.action;
-			
-			if (action === 'confirmRename' && window.confirmRename) {
-				window.confirmRename();
-			} else if (action === 'confirmShare' && window.confirmShare) {
-				window.confirmShare();
-			} else if (action === 'copyShareLink' && window.copyShareLink) {
-				window.copyShareLink();
-			} else if (action === 'toggleProgressCollapse' && window.toggleProgressCollapse) {
-				window.toggleProgressCollapse();
-			} else if (action === 'toggleProgressVisibility' && window.toggleProgressVisibility) {
-				window.toggleProgressVisibility();
-			} else if (action === 'showProgressPanel' && window.toggleProgressVisibility) {
-				window.toggleProgressVisibility();
-			} else if (action === 'closeProgress' && window.hideProgressPopup) {
-				window.hideProgressPopup();
-			} else if (action === 'cancelAllUploads' && window.cancelAllUploads) {
-				window.cancelAllUploads();
-			}
-			return;
-		}
-		
-		// Handle trash action buttons
-		const trashBtn = e.target.closest('.trash-action-btn');
-		if (trashBtn) {
-			e.preventDefault();
-			const action = trashBtn.dataset.trashAction;
-			const fileId = trashBtn.dataset.fileId;
-			
-			if (action === 'restore' && window.restoreFile) {
-				window.restoreFile(fileId);
-			} else if (action === 'deleteForever' && window.deleteForever) {
-				window.deleteForever(fileId);
-			} else if (action === 'bulkDelete' && window.bulkDeleteTrash) {
-				window.bulkDeleteTrash();
-			} else if (action === 'bulkRestore' && window.bulkRestoreTrash) {
-				window.bulkRestoreTrash();
-			}
-			return;
-		}
-	});
-	
-	// Handle checkbox changes for trash selection
-	document.addEventListener('change', (e) => {
-		// Select all trash checkbox
-		if (e.target.id === 'selectAllTrash') {
-			if (window.toggleSelectAllTrash) {
-				window.toggleSelectAllTrash();
-			}
-			return;
-		}
-		
-		// Individual trash checkboxes
-		if (e.target.classList.contains('trashCheckbox')) {
-			if (window.updateTrashSelection) {
-				window.updateTrashSelection();
-			}
-			return;
-		}
-	});
-	
-	// Verify all functions loaded
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', () => {
-			const requiredFunctions = ['showFileDetails', 'deleteFile', 'showRenameModal', 'showShareModal', 'uploadFiles', 'restoreFile', 'deleteForever', 'bulkDeleteTrash', 'bulkRestoreTrash', 'toggleSelectAllTrash', 'updateTrashSelection'];
-			requiredFunctions.forEach(fn => {
-				if (typeof window[fn] !== 'function') {
-					console.error(`[Files Page] Missing function: ${fn}`);
-				}
-			});
-		});
-	}
-</script>
-
+<script src="/js/file-page-events.js"></script>

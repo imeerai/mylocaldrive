@@ -1,5 +1,6 @@
 // Profile Controller
 const User = require('../models/user.model');
+const File = require('../models/file.model');
 const bcrypt = require('bcryptjs');
 
 const normalizeComparable = (value) => String(value || '').trim().toLowerCase();
@@ -15,12 +16,15 @@ const getProfile = async (req, res, next) => {
         message: 'User profile not found'
       });
     }
+    const files = await File.find({ userId: req.user.id, isDeleted: false }).select('fileSize').lean();
     res.render('pages/profile', { 
-      title: "Profile - IMEER.ai", 
+      title: "Profile · MyDrive", 
       isLoggedIn: true,
       user,
-      error: req.query.error || null,
-      success: req.query.success || null
+      storageBytes: files.reduce((sum, f) => sum + (f.fileSize || 0), 0),
+      fileCount: files.length,
+      error: req.query.error || res.locals.error || null,
+      success: req.query.success || res.locals.success || null
     });
   } catch (err) {
     console.error("Error fetching profile:", err);
@@ -33,11 +37,11 @@ const getEditProfileName = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     res.render('pages/edit-name', { 
-      title: "Edit Profile - IMEER.ai", 
+      title: "Edit name · MyDrive", 
       isLoggedIn: true,
       user,
-      error: req.query.error || null,
-      success: req.query.success || null
+      error: req.query.error || res.locals.error || null,
+      success: req.query.success || res.locals.success || null
     });
   } catch (err) {
     console.error("Error fetching edit profile:", err);
@@ -71,7 +75,7 @@ const updateProfileName = async (req, res, next) => {
 // Get change password page
 const getChangePassword = (req, res) => {
   res.render('pages/change-password', { 
-    title: "Security Settings - IMEER.ai", 
+    title: "Change password · MyDrive", 
     isLoggedIn: true
   });
 };
