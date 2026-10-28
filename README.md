@@ -7,11 +7,6 @@ MyDrive is a full-stack cloud storage application where users can create account
 - **Live Demo:** https://mylocaldrive.vercel.app/
 - **Local URL:** http://localhost:3000
 
-## Visual Preview
-
-![MyDrive Preview 1](display/up1.png)
-![MyDrive Preview 2](display/up2.png)
-
 ## What We Actually Built
 
 - Complete auth flow: register, login, logout
